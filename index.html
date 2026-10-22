@@ -1008,6 +1008,15 @@ async function saveRecord(kind, rec, label) {
   S.saving = true; if (btn) { btn.disabled = true; btn.textContent = "Saving…"; }
   try {
     const clean = kind === "topics" ? cleanTopic(rec) : cleanEpisode(rec);
+    // Nothing changed: don't make an empty commit that looks like a save.
+    const { updated: _a, ...cmpNew } = clean, { updated: _b, ...cmpOld } = (cur && cur.data) || {};
+    if (cur && same(cmpNew, cmpOld)) {
+      S.dirty = false;
+      toast("Nothing to change");
+      if (kind === "topics") { const y = window.scrollY; render(); window.scrollTo(0, y); }
+      else { const s = document.getElementById("savestate"); if (s) { s.textContent = "Saved"; s.classList.remove("dirty"); } }
+      return;
+    }
     if (kind === "topics") clean.updated = today();
     const sha = await putRecord(kind, clean, cur && cur.sha, `${label}: ${kind === "topics" ? "#" + clean.id + " " + clean.title : "episode " + pad3(clean.id)}`);
     map.set(clean.id, { data: clean, sha });

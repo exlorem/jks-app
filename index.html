@@ -116,12 +116,29 @@ main { max-width: 1180px; margin: 0 auto; padding: 16px; }
   flex: 1; min-width: 0; border: 1px solid var(--line); background: var(--paper);
   border-radius: 10px; padding: 9px 12px;
 }
-.filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+/* owner buckets: the primary way to slice the list */
+.owners { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+.owner {
+  border: 1px solid var(--line); background: var(--paper); border-radius: 12px; padding: 10px 12px;
+  cursor: pointer; font: 700 18px/1.2 var(--display); color: var(--ink); letter-spacing: -0.01em;
+}
+.owner:hover { border-color: var(--slate); }
+.owner[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--fog); }
+
+/* status: secondary, one quiet line */
+.listcol { container-type: inline-size; }
+.filters { display: flex; flex-wrap: nowrap; justify-content: space-between; gap: 4px; margin-bottom: 12px; }
 .chip {
-  border: 1px solid var(--line); background: transparent; border-radius: 999px; padding: 4px 11px;
-  cursor: pointer; font-size: 15px; color: var(--slate);
+  flex: none; border: 1px solid var(--line); background: transparent; border-radius: 999px; padding: 3px 9px;
+  cursor: pointer; font-size: 14px; line-height: 1.4; color: var(--slate); white-space: nowrap;
 }
 .chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--fog); }
+@container (max-width: 345px) {
+  .chip { padding: 3px 6px; font-size: 13px; }
+}
+@container (max-width: 300px) {
+  .filters { flex-wrap: wrap; justify-content: flex-start; }
+}
 .count { color: var(--slate); font-size: 15px; margin: 0 0 8px; }
 .rows { list-style: none; margin: 0; padding: 0; }
 .row {
@@ -608,8 +625,8 @@ function topicList() {
   const list = filteredTopics();
   const search = el("input", { class: "search", type: "search", placeholder: "Search topics", "aria-label": "Search topics", value: S.q,
     oninput: (e) => { S.q = e.target.value; renderListOnly(); } });
-  const chips = (label, key, list2) => list2.map(([v, l]) => el("button", {
-    class: "chip", "aria-pressed": S[key] === v ? "true" : "false", text: l,
+  const chips = (cls, key, list2) => list2.map(([v, l]) => el("button", {
+    class: cls, "aria-pressed": S[key] === v ? "true" : "false", text: l,
     onclick: () => { S[key] = S[key] === v ? "" : v; renderListOnly(); },
   }));
   const rows = el("ul", { class: "rows", role: "listbox", "aria-label": "Topics" },
@@ -629,8 +646,8 @@ function topicList() {
     : list.length === 0 ? el("div", { class: "empty", text: "Nothing matches. Clear the search or a filter." }) : null;
   return el("div", { class: "listcol", id: "listcol" },
     el("div", { class: "toolbar" }, search, el("button", { class: "btn primary", text: "Add topic", onclick: openAdd })),
-    el("div", { class: "filters", role: "group", "aria-label": "Filter by owner" }, chips("Owner", "fOwner", OWNERS.slice(0, 2))),
-    el("div", { class: "filters", role: "group", "aria-label": "Filter by status" }, chips("Status", "fStatus", [...STATUSES, ["aired", "Aired"]])),
+    el("div", { class: "owners", role: "group", "aria-label": "Show one person's topics" }, chips("owner", "fOwner", OWNERS.slice(0, 2))),
+    el("div", { class: "filters", role: "group", "aria-label": "Filter by status" }, chips("chip", "fStatus", [...STATUSES, ["aired", "Aired"]])),
     el("p", { class: "count", text: list.length === 1 ? "1 topic" : list.length + " topics" }),
     empty || rows,
   );

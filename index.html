@@ -213,7 +213,8 @@ textarea.field { resize: vertical; min-height: 84px; }
 
 /* sources */
 .sources { display: grid; gap: 10px; }
-.source { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; display: grid; gap: 8px; }
+.source { border: 2px solid var(--cobalt); background: var(--paper); border-radius: 12px; padding: 10px 12px 12px; display: grid; gap: 8px; }
+.source .edithead { font-size: 13px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--cobalt); margin: 0; }
 .source .top { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: start; }
 .source input, .source select, .source textarea {
   border: 1px solid transparent; background: transparent; border-radius: 6px; padding: 3px 4px; width: 100%;
@@ -223,14 +224,16 @@ textarea.field { resize: vertical; min-height: 84px; }
 .source .stitle { font-weight: 700; }
 .source .surl { font-size: 15px; color: var(--cobalt); }
 .source textarea { resize: vertical; min-height: 44px; }
-.source .tags { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.source .tags { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
+.source .tags label { display: grid; gap: 2px; font-size: 13px; color: var(--slate); }
 .source .tags select { width: auto; border-color: var(--line); font-size: 15px; }
+.source .srcfoot { display: flex; gap: 8px; align-items: center; border-top: 1px solid var(--line); padding-top: 10px; margin-top: 2px; }
+.source .srcfoot .hint { font-size: 14px; color: var(--slate); margin-right: auto; }
 /* Dropdowns get explicit colors so their option lists are readable in both themes. */
 .source select { background: var(--paper); color: var(--ink); padding: 5px 8px; }
 select option { background: var(--paper); color: var(--ink); }
 .acc-not-opened { color: var(--warn); font-weight: 700; }
 .open-link { font-size: 15px; white-space: nowrap; }
-.source .done { justify-self: start; }
 
 /* source cards: read first, edit on demand */
 .scard {
@@ -250,6 +253,7 @@ select option { background: var(--paper); color: var(--ink); }
 .scard .stitle-read a { color: var(--ink); text-decoration-color: var(--line); text-underline-offset: 3px; }
 .scard .stitle-read a:hover { text-decoration-color: var(--cobalt); }
 .scard .host { font-size: 14px; color: var(--slate); margin: 0; overflow-wrap: anywhere; }
+.scard .host .titlefail { color: var(--warn); font-weight: 700; }
 .scard .conf { margin: 2px 0 0; white-space: pre-wrap; }
 .scard .conf.none { color: var(--slate); font-style: italic; }
 .pill.cited { background: var(--cobalt); border-color: var(--cobalt); color: var(--cobalt-ink); }
@@ -877,7 +881,8 @@ function sourceCard(s, i, onEdit) {
   let host = "";
   if (url) { try { host = new URL(url).hostname.replace(/^www\./, ""); } catch {} }
   const title = s.title || host || "Untitled source";
-  const titlePending = !s.title && !!url;
+  const titleFailed = !s.title && !!url && (s.title_status || "").startsWith("failed");
+  const titlePending = !s.title && !!url && !titleFailed;
   const wb = waybackState(s);
   const archives = (s.cited || s.wayback || s.archive_today) ? el("p", { class: "archives" },
     el("span", { class: "lbl-a", text: "Archived:" }),
@@ -898,7 +903,9 @@ function sourceCard(s, i, onEdit) {
       el("button", { class: "btn quiet small edit", text: "Edit", "aria-label": "Edit source: " + title, onclick: onEdit }),
     ),
     el("p", { class: "stitle-read" }, url ? el("a", { href: url, target: "_blank", rel: "noopener noreferrer", text: title }) : title),
-    el("p", { class: "host", text: url ? host + (titlePending ? ". Title is filled in from the page after saving." : "") : "No link found" }),
+    el("p", { class: "host" }, url ? host : "No link found",
+      titlePending ? ". Title is filled in from the page after saving." : null,
+      titleFailed ? el("span", { class: "titlefail", text: ". Couldn't fetch the title: " + s.title_status.replace(/^failed:\s*/, "") + ". Edit to type one in." }) : null),
     el("p", { class: "conf" + (s.confirmed ? "" : " none"), text: s.confirmed || "Nothing noted yet about what this confirms." }),
     archives,
   );
@@ -950,26 +957,31 @@ function sourceRow(t, s, i, redraw, onDone) {
   accSel.addEventListener("change", paint); paint();
   const url = safeUrl(s.url);
   return el("div", { class: "source" },
+    el("p", { class: "edithead", text: "Editing source" }),
     el("div", { class: "top" },
-      bind(s, "title", el("input", { class: "stitle", "aria-label": "Source title", placeholder: "Title (leave blank to fill in from the page)" })),
+      (() => { const ti = bind(s, "title", el("input", { class: "stitle", "aria-label": "Source title", placeholder: "Title (leave blank to fill in from the page)" }));
+        ti.addEventListener("input", () => { if (ti.value.trim()) delete s.title_status; }); return ti; })(),
       url ? el("a", { class: "open-link", href: url, target: "_blank", rel: "noopener noreferrer", text: "Open" }) : el("span"),
     ),
     (() => {
       const u = bind(s, "url", el("input", { class: "surl", type: "url", inputmode: "url", "aria-label": "Source link", placeholder: "Link, or leave blank if none was found" }));
       // A Wayback copy belongs to one exact link; changing the link means it has to be made again.
-      u.addEventListener("change", () => { if (s.wayback || s.wayback_status) { s.wayback = ""; s.wayback_status = ""; } });
+      u.addEventListener("change", () => { delete s.title_status; if (s.wayback || s.wayback_status) { s.wayback = ""; s.wayback_status = ""; } });
       return u;
     })(),
+    el("div", { class: "tags" },
+      el("label", {}, "Access", accSel),
+      el("label", {}, "Type", bind(s, "kind", el("select", { "aria-label": "Source type" }, options(KINDS, s.kind)))),
+    ),
     bind(s, "confirmed", el("textarea", { "aria-label": "What it confirmed", rows: "2", placeholder: "What does this source actually confirm?" })),
     archiveForm(s),
-    el("div", { class: "tags" },
-      accSel,
-      bind(s, "kind", el("select", { "aria-label": "Source type" }, options(KINDS, s.kind))),
-      el("button", { class: "btn quiet small", text: "Remove", style: "margin-left:auto", onclick: () => {
+    el("div", { class: "srcfoot" },
+      el("button", { class: "btn quiet small", text: "Remove source", onclick: () => {
         if (!confirm("Remove this source from the topic? It's gone once you save.")) return;
         t.sources.splice(i, 1); markDirty(); redraw();
       } }),
-      onDone ? el("button", { class: "btn small done", text: "Done", onclick: onDone }) : null,
+      el("span", { class: "hint", text: "Saving the topic also saves this." }),
+      onDone ? el("button", { class: "btn primary small done", text: "Done", onclick: onDone }) : null,
     ),
   );
 }
@@ -1003,7 +1015,9 @@ async function saveRecord(kind, rec, label) {
     toast("Saved");
     const s = document.getElementById("savestate");
     if (s) { s.textContent = "Saved"; s.classList.remove("dirty"); }
-    renderListOnly();
+    // Redraw from what was saved: open source editors close into cards, and empty sources drop out.
+    if (kind === "topics") { const y = window.scrollY; render(); window.scrollTo(0, y); }
+    else renderListOnly();
   } catch (err) {
     if (err.status === 409 || err.status === 422) {
       // Someone (often the archiver) saved first. Merge if our changes don't overlap; otherwise ask.
@@ -1055,6 +1069,7 @@ function cleanSource(s) {
   if ((s.wayback || "").trim()) out.wayback = s.wayback.trim();
   if (s.wayback_status && !out.wayback) out.wayback_status = s.wayback_status;
   if (s.wayback_attempts && !out.wayback) out.wayback_attempts = s.wayback_attempts;
+  if (s.title_status && !out.title) out.title_status = s.title_status;
   return out;
 }
 

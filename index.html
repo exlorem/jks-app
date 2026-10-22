@@ -26,6 +26,7 @@
   --st-dropped: #9AA3B0;
   --st-aired: #7A4FD8;
   --warn: #B4471B;
+  --amber: #8A6100;
   --belief-bg: #E6EAF0;
   --truth-bg: #FFFFFF;
   --focus: #2D5BE3;
@@ -37,14 +38,14 @@
   :root:not([data-theme="light"]) {
     --fog: #12161F; --paper: #1A2030; --ink: #E7EBF2; --slate: #9AA4B6; --line: #2C3446; --soft: #232A3A;
     --cobalt: #6D8FF5; --cobalt-ink: #0E1220; --st-idea: #8E98AA; --st-researching: #6D8FF5; --st-verified: #4CC08A;
-    --st-dropped: #6B7486; --st-aired: #A88BF0; --warn: #F08A5D; --belief-bg: #161B27; --truth-bg: #1F2638; --focus: #8FA9FF;
+    --st-dropped: #6B7486; --st-aired: #A88BF0; --warn: #F08A5D; --amber: #E2B04A; --belief-bg: #161B27; --truth-bg: #1F2638; --focus: #8FA9FF;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --fog: #12161F; --paper: #1A2030; --ink: #E7EBF2; --slate: #9AA4B6; --line: #2C3446; --soft: #232A3A;
   --cobalt: #6D8FF5; --cobalt-ink: #0E1220; --st-idea: #8E98AA; --st-researching: #6D8FF5; --st-verified: #4CC08A;
-  --st-dropped: #6B7486; --st-aired: #A88BF0; --warn: #F08A5D; --belief-bg: #161B27; --truth-bg: #1F2638; --focus: #8FA9FF;
+  --st-dropped: #6B7486; --st-aired: #A88BF0; --warn: #F08A5D; --amber: #E2B04A; --belief-bg: #161B27; --truth-bg: #1F2638; --focus: #8FA9FF;
   color-scheme: dark;
 }
 
@@ -93,7 +94,7 @@ a { color: var(--cobalt); }
 main { max-width: 1180px; margin: 0 auto; padding: 16px; }
 .split { display: grid; gap: 20px; }
 @media (min-width: 960px) {
-  .split.has-detail { grid-template-columns: minmax(300px, 380px) 1fr; align-items: start; }
+  .split.has-detail { grid-template-columns: minmax(300px, 400px) 1fr; align-items: start; }
   .split.has-detail .listcol { position: sticky; top: 76px; max-height: calc(100vh - 92px); overflow: auto; }
 }
 @media (max-width: 959px) {
@@ -129,12 +130,18 @@ main { max-width: 1180px; margin: 0 auto; padding: 16px; }
 .listcol { container-type: inline-size; }
 .filters { display: flex; flex-wrap: nowrap; justify-content: space-between; gap: 4px; margin-bottom: 12px; }
 .chip {
-  flex: none; border: 1px solid var(--line); background: transparent; border-radius: 999px; padding: 3px 9px;
-  cursor: pointer; font-size: 14px; line-height: 1.4; color: var(--slate); white-space: nowrap;
+  flex: none; display: inline-flex; align-items: center; gap: 4px;
+  border: 1px solid var(--line); background: var(--soft); border-radius: 999px; padding: 4px 7px;
+  cursor: pointer; font-size: 13px; font-weight: 700; line-height: 1.3; color: var(--ink); white-space: nowrap;
 }
+.chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--st, var(--slate)); flex: none; }
+.chip:hover { border-color: var(--slate); }
 .chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--fog); }
+@container (max-width: 394px) {
+  .chip::before { display: none; }
+}
 @container (max-width: 345px) {
-  .chip { padding: 3px 6px; font-size: 13px; }
+  .chip { padding: 4px 5px; }
 }
 @container (max-width: 300px) {
   .filters { flex-wrap: wrap; justify-content: flex-start; }
@@ -220,6 +227,28 @@ textarea.field { resize: vertical; min-height: 84px; }
 .source .tags select { width: auto; border-color: var(--line); font-size: 15px; }
 .acc-not-opened { color: var(--warn); font-weight: 700; }
 .open-link { font-size: 15px; white-space: nowrap; }
+.source .done { justify-self: start; }
+
+/* source cards: read first, edit on demand */
+.scard {
+  background: var(--fog); border: 1px solid var(--line); border-left: 4px solid var(--acc, var(--line));
+  border-radius: 12px; padding: 12px 14px 12px 14px; display: grid; gap: 6px;
+}
+.scard .cardtop { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: start; }
+.scard .pills { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.pill {
+  display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 700; line-height: 1;
+  padding: 5px 8px; border-radius: 999px; background: var(--paper); border: 1px solid var(--line); color: var(--ink);
+}
+.pill.acc { color: var(--acc); border-color: currentColor; }
+.pill.kind-weak { color: var(--warn); }
+.scard .edit { margin: -4px -6px 0 0; }
+.scard .stitle-read { font: 700 18px/1.3 var(--display); margin: 2px 0 0; }
+.scard .stitle-read a { color: var(--ink); text-decoration-color: var(--line); text-underline-offset: 3px; }
+.scard .stitle-read a:hover { text-decoration-color: var(--cobalt); }
+.scard .host { font-size: 14px; color: var(--slate); margin: 0; overflow-wrap: anywhere; }
+.scard .conf { margin: 2px 0 0; white-space: pre-wrap; }
+.scard .conf.none { color: var(--slate); font-style: italic; }
 
 /* questions */
 .qs { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
@@ -627,6 +656,7 @@ function topicList() {
     oninput: (e) => { S.q = e.target.value; renderListOnly(); } });
   const chips = (cls, key, list2) => list2.map(([v, l]) => el("button", {
     class: cls, "aria-pressed": S[key] === v ? "true" : "false", text: l,
+    style: cls === "chip" ? `--st: var(--st-${v})` : null,
     onclick: () => { S[key] = S[key] === v ? "" : v; renderListOnly(); },
   }));
   const rows = el("ul", { class: "rows", role: "listbox", "aria-label": "Topics" },
@@ -707,9 +737,17 @@ function topicSheet(t) {
   const appeared = episodesFor(t.id);
 
   const sourcesBox = el("div", { class: "sources" });
-  const drawSources = () => {
-    sourcesBox.replaceChildren(...(t.sources.length ? t.sources.map((s, i) => sourceRow(t, s, i, drawSources)) :
+  const editing = new Set();
+  const drawSources = (focusIndex) => {
+    sourcesBox.replaceChildren(...(t.sources.length ? t.sources.map((s, i) => editing.has(s)
+      ? sourceRow(t, s, i, drawSources, () => { editing.delete(s); drawSources(i); })
+      : sourceCard(s, i, () => { editing.add(s); drawSources(i); })) :
       [el("p", { class: "empty", text: "No sources yet. Add one for each place you checked, including ones you couldn't open." })]));
+    if (focusIndex != null) {
+      const node = sourcesBox.children[focusIndex];
+      const target = node && (node.querySelector(".stitle") || node.querySelector(".edit"));
+      if (target) target.focus();
+    }
   };
   drawSources();
 
@@ -760,9 +798,9 @@ function topicSheet(t) {
       el("h3", {}, "Sources", el("span", { class: "aside", text: t.sources.length ? t.sources.length + " listed" : "" })),
       sourcesBox,
       el("div", { style: "margin-top:10px" }, el("button", { class: "btn small", text: "Add source", onclick: () => {
-        t.sources.push({ title: "", url: "", confirmed: "", access: "opened", kind: "secondary" });
-        markDirty(); drawSources();
-        const all = sourcesBox.querySelectorAll(".stitle"); all[all.length - 1].focus();
+        const fresh = { title: "", url: "", confirmed: "", access: "opened", kind: "secondary" };
+        t.sources.push(fresh); editing.add(fresh);
+        markDirty(); drawSources(t.sources.length - 1);
       } })),
     ),
 
@@ -792,7 +830,28 @@ function titleField(obj, key, label, placeholder) {
   return bind(obj, key, ta);
 }
 
-function sourceRow(t, s, i, redraw) {
+const ACCESS_COLOR = { opened: "var(--st-verified)", snippet: "var(--amber)", "not-opened": "var(--warn)" };
+
+function sourceCard(s, i, onEdit) {
+  const url = safeUrl(s.url);
+  let host = "";
+  if (url) { try { host = new URL(url).hostname.replace(/^www\./, ""); } catch {} }
+  const title = s.title || host || "Untitled source";
+  return el("div", { class: "scard", style: `--acc: ${ACCESS_COLOR[s.access] || "var(--line)"}` },
+    el("div", { class: "cardtop" },
+      el("div", { class: "pills" },
+        el("span", { class: "pill acc", text: nameOf(ACCESS, s.access) }),
+        el("span", { class: "pill" + (s.kind === "weak" ? " kind-weak" : ""), text: nameOf(KINDS, s.kind) }),
+      ),
+      el("button", { class: "btn quiet small edit", text: "Edit", "aria-label": "Edit source: " + title, onclick: onEdit }),
+    ),
+    el("p", { class: "stitle-read" }, url ? el("a", { href: url, target: "_blank", rel: "noopener noreferrer", text: title }) : title),
+    el("p", { class: "host", text: url ? host : "No link found" }),
+    el("p", { class: "conf" + (s.confirmed ? "" : " none"), text: s.confirmed || "Nothing noted yet about what this confirms." }),
+  );
+}
+
+function sourceRow(t, s, i, redraw, onDone) {
   const accSel = bind(s, "access", el("select", { "aria-label": "Access" }, options(ACCESS, s.access)));
   const paint = () => accSel.classList.toggle("acc-not-opened", accSel.value === "not-opened");
   accSel.addEventListener("change", paint); paint();
@@ -811,6 +870,7 @@ function sourceRow(t, s, i, redraw) {
         if (!confirm("Remove this source from the topic? It's gone once you save.")) return;
         t.sources.splice(i, 1); markDirty(); redraw();
       } }),
+      onDone ? el("button", { class: "btn small done", text: "Done", onclick: onDone }) : null,
     ),
   );
 }

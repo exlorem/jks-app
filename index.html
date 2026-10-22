@@ -249,6 +249,23 @@ textarea.field { resize: vertical; min-height: 84px; }
 .scard .host { font-size: 14px; color: var(--slate); margin: 0; overflow-wrap: anywhere; }
 .scard .conf { margin: 2px 0 0; white-space: pre-wrap; }
 .scard .conf.none { color: var(--slate); font-style: italic; }
+.pill.cited { background: var(--cobalt); border-color: var(--cobalt); color: var(--cobalt-ink); }
+.archives { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline; margin: 2px 0 0; font-size: 14px; }
+.archives .lbl-a { color: var(--slate); }
+.archives a { font-weight: 700; }
+.archives .pending { color: var(--slate); font-style: italic; }
+.archives .missing, .archives .failed { color: var(--warn); font-weight: 700; }
+.scard.needs-archive { box-shadow: 0 0 0 1px var(--warn); }
+
+/* archive controls in the source form */
+.archform { display: grid; gap: 8px; border-top: 1px dashed var(--line); padding-top: 8px; }
+.citedbox { display: flex; gap: 8px; align-items: center; font-weight: 700; }
+.citedbox input { width: auto; }
+.archrow { display: grid; grid-template-columns: 1fr auto; gap: 6px; align-items: center; }
+.archrow label { display: grid; gap: 2px; font-size: 14px; color: var(--slate); }
+.archrow input { border-color: var(--line) !important; }
+.archnote { font-size: 14px; color: var(--slate); margin: 0; }
+.archnote.bad { color: var(--warn); font-weight: 700; }
 
 /* questions */
 .qs { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
@@ -795,7 +812,12 @@ function topicSheet(t) {
     ),
 
     el("section", { class: "block" },
-      el("h3", {}, "Sources", el("span", { class: "aside", text: t.sources.length ? t.sources.length + " listed" : "" })),
+      el("h3", {}, "Sources", el("span", { class: "aside", text: (() => {
+        if (!t.sources.length) return "";
+        const cited = t.sources.filter((s) => s.cited).length;
+        const missing = t.sources.filter((s) => needsArchive(s) && waybackState(s) !== "pending").length;
+        return [t.sources.length + " listed", cited ? cited + " cited" : null, missing ? missing + " cited without an archive" : null].filter(Boolean).join(", ");
+      })() })),
       sourcesBox,
       el("div", { style: "margin-top:10px" }, el("button", { class: "btn small", text: "Add source", onclick: () => {
         const fresh = { title: "", url: "", confirmed: "", access: "opened", kind: "secondary" };
@@ -832,14 +854,40 @@ function titleField(obj, key, label, placeholder) {
 
 const ACCESS_COLOR = { opened: "var(--st-verified)", snippet: "var(--amber)", "not-opened": "var(--warn)" };
 
+/* ---------- archives ---------- */
+const ARCHIVE_TODAY_HOSTS = ["archive.today", "archive.is", "archive.ph", "archive.li", "archive.md", "archive.vn", "archive.fo"];
+function hostOf(u) { try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return ""; } }
+const isArchiveToday = (u) => !!safeUrl(u) && ARCHIVE_TODAY_HOSTS.includes(hostOf(u));
+const isWayback = (u) => !!safeUrl(u) && hostOf(u) === "web.archive.org";
+/* Opens archive.today's own page for this link: it shows an existing copy or makes a new one. */
+const archiveTodayOpenUrl = (u) => "https://archive.ph/?run=1&url=" + encodeURIComponent(u);
+function waybackState(s) {
+  if (s.wayback) return "saved";
+  if (!s.cited || !safeUrl(s.url)) return "none";
+  if ((s.wayback_status || "").startsWith("failed")) return "failed";
+  return "pending";
+}
+function needsArchive(s) { return !!s.cited && !!safeUrl(s.url) && !s.wayback && !s.archive_today; }
+
 function sourceCard(s, i, onEdit) {
   const url = safeUrl(s.url);
   let host = "";
   if (url) { try { host = new URL(url).hostname.replace(/^www\./, ""); } catch {} }
   const title = s.title || host || "Untitled source";
-  return el("div", { class: "scard", style: `--acc: ${ACCESS_COLOR[s.access] || "var(--line)"}` },
+  const wb = waybackState(s);
+  const archives = (s.cited || s.wayback || s.archive_today) ? el("p", { class: "archives" },
+    el("span", { class: "lbl-a", text: "Archived:" }),
+    s.archive_today && isArchiveToday(s.archive_today)
+      ? el("a", { href: s.archive_today, target: "_blank", rel: "noopener noreferrer", text: "archive.today" }) : null,
+    wb === "saved" ? el("a", { href: safeUrl(s.wayback), target: "_blank", rel: "noopener noreferrer", text: "Wayback" }) : null,
+    wb === "pending" ? el("span", { class: "pending", text: "Wayback copy pending" }) : null,
+    wb === "failed" ? el("span", { class: "failed", text: "Wayback couldn't save it" }) : null,
+    needsArchive(s) && wb !== "pending" ? el("span", { class: "missing", text: "No archive yet" }) : null,
+  ) : null;
+  return el("div", { class: "scard" + (needsArchive(s) && wb !== "pending" ? " needs-archive" : ""), style: `--acc: ${ACCESS_COLOR[s.access] || "var(--line)"}` },
     el("div", { class: "cardtop" },
       el("div", { class: "pills" },
+        s.cited ? el("span", { class: "pill cited", text: "Cited on air" }) : null,
         el("span", { class: "pill acc", text: nameOf(ACCESS, s.access) }),
         el("span", { class: "pill" + (s.kind === "weak" ? " kind-weak" : ""), text: nameOf(KINDS, s.kind) }),
       ),
@@ -848,6 +896,47 @@ function sourceCard(s, i, onEdit) {
     el("p", { class: "stitle-read" }, url ? el("a", { href: url, target: "_blank", rel: "noopener noreferrer", text: title }) : title),
     el("p", { class: "host", text: url ? host : "No link found" }),
     el("p", { class: "conf" + (s.confirmed ? "" : " none"), text: s.confirmed || "Nothing noted yet about what this confirms." }),
+    archives,
+  );
+}
+
+function archiveForm(s) {
+  const cited = el("input", { type: "checkbox" });
+  cited.checked = !!s.cited;
+  const todayIn = bind(s, "archive_today", el("input", { class: "field", type: "url", inputmode: "url", placeholder: "Paste the archive.ph/… link here" }));
+  const todayNote = el("p", { class: "archnote" });
+  const checkToday = () => {
+    const v = todayIn.value.trim();
+    todayNote.className = "archnote" + (v && !isArchiveToday(v) ? " bad" : "");
+    todayNote.textContent = !v ? "Opens archive.today in a new tab. It shows an existing copy or makes one; copy that page's address back here."
+      : isArchiveToday(v) ? "Looks right." : "That isn't an archive.today link.";
+  };
+  todayIn.addEventListener("input", checkToday); checkToday();
+  const openBtn = el("button", { class: "btn small", type: "button", text: "Open archive.today", onclick: () => {
+    const u = safeUrl(s.url);
+    if (!u) { toast("Add the source's link first.", true); return; }
+    window.open(archiveTodayOpenUrl(u), "_blank", "noopener,noreferrer");
+  } });
+  const wbIn = bind(s, "wayback", el("input", { class: "field", type: "url", inputmode: "url", placeholder: "Filled in automatically" }));
+  const wbNote = el("p", { class: "archnote" });
+  const paintWb = () => {
+    const st = waybackState(s);
+    wbNote.className = "archnote" + (st === "failed" ? " bad" : "");
+    wbNote.textContent =
+      st === "saved" ? (isWayback(s.wayback) ? "Saved." : "That isn't a web.archive.org link.")
+      : st === "failed" ? "Wayback couldn't save this page (" + s.wayback_status.replace(/^failed:\s*/, "") + "). It will retry; archive.today is the backup."
+      : st === "pending" ? "Saved to the Wayback Machine automatically within a few minutes of saving the topic."
+      : "Tick \"Cited on air\" and the Wayback copy is made automatically.";
+  };
+  wbIn.addEventListener("input", paintWb);
+  cited.addEventListener("change", () => { s.cited = cited.checked; markDirty(); paintWb(); });
+  paintWb();
+  return el("div", { class: "archform" },
+    el("label", { class: "citedbox" }, cited, "Cited on air (keep an archive copy)"),
+    el("div", { class: "archrow" }, el("label", {}, "archive.today copy", todayIn), el("div", { style: "align-self:end" }, openBtn)),
+    todayNote,
+    el("label", { class: "lbl" }, "Wayback Machine copy", wbIn),
+    wbNote,
   );
 }
 
@@ -861,8 +950,14 @@ function sourceRow(t, s, i, redraw, onDone) {
       bind(s, "title", el("input", { class: "stitle", "aria-label": "Source title", placeholder: "Title of the source" })),
       url ? el("a", { class: "open-link", href: url, target: "_blank", rel: "noopener noreferrer", text: "Open" }) : el("span"),
     ),
-    bind(s, "url", el("input", { class: "surl", type: "url", inputmode: "url", "aria-label": "Source link", placeholder: "Link, or leave blank if none was found" })),
+    (() => {
+      const u = bind(s, "url", el("input", { class: "surl", type: "url", inputmode: "url", "aria-label": "Source link", placeholder: "Link, or leave blank if none was found" }));
+      // A Wayback copy belongs to one exact link; changing the link means it has to be made again.
+      u.addEventListener("change", () => { if (s.wayback || s.wayback_status) { s.wayback = ""; s.wayback_status = ""; } });
+      return u;
+    })(),
     bind(s, "confirmed", el("textarea", { "aria-label": "What it confirmed", rows: "2", placeholder: "What does this source actually confirm?" })),
+    archiveForm(s),
     el("div", { class: "tags" },
       accSel,
       bind(s, "kind", el("select", { "aria-label": "Source type" }, options(KINDS, s.kind))),
@@ -906,7 +1001,27 @@ async function saveRecord(kind, rec, label) {
     if (s) { s.textContent = "Saved"; s.classList.remove("dirty"); }
     renderListOnly();
   } catch (err) {
-    if (err.status === 409 || err.status === 422) return conflict(kind, rec.id);
+    if (err.status === 409 || err.status === 422) {
+      // Someone (often the archiver) saved first. Merge if our changes don't overlap; otherwise ask.
+      try {
+        const fresh = await fetchRecord(kind, rec.id);
+        const mine = kind === "topics" ? cleanTopic(rec) : cleanEpisode(rec);
+        if (kind === "topics") mine.updated = today();
+        const merged = cur ? mergeRecords(cur.data, mine, fresh.data) : null;
+        if (merged) {
+          const sha = await putRecord(kind, merged, fresh.sha, `${label} (merged): ${kind === "topics" ? "#" + merged.id + " " + merged.title : "episode " + pad3(merged.id)}`);
+          map.set(merged.id, { data: merged, sha });
+          S.dirty = false;
+          toast("Saved, and merged with a change made meanwhile");
+          S.saving = false;
+          render();
+          return;
+        }
+      } catch (inner) {
+        if (!(inner instanceof GHError) || (inner.status !== 409 && inner.status !== 422)) { toast(errText(inner), true); return; }
+      }
+      return conflict(kind, rec.id);
+    }
     toast(errText(err), true);
   } finally {
     S.saving = false;
@@ -926,15 +1041,67 @@ async function conflict(kind, id) {
   } catch (err) { toast(errText(err), true); }
 }
 
+function cleanSource(s) {
+  const out = {
+    title: (s.title || "").trim(), url: (s.url || "").trim(), confirmed: s.confirmed || "",
+    access: s.access || "opened", kind: s.kind || "secondary",
+  };
+  if (s.cited) out.cited = true;
+  if ((s.archive_today || "").trim()) out.archive_today = s.archive_today.trim();
+  if ((s.wayback || "").trim()) out.wayback = s.wayback.trim();
+  if (s.wayback_status && !out.wayback) out.wayback_status = s.wayback_status;
+  if (s.wayback_attempts && !out.wayback) out.wayback_attempts = s.wayback_attempts;
+  return out;
+}
+
+/* Fields the background archiver writes. A save never conflicts over these alone. */
+const ARCHIVER_FIELDS = ["wayback", "wayback_status", "wayback_attempts"];
+/* Compare by content, ignoring key order. */
+const canon = (v) => Array.isArray(v) ? v.map(canon)
+  : v && typeof v === "object" ? Object.fromEntries(Object.keys(v).sort().map((k) => [k, canon(v[k])])) : v;
+const same = (a, b) => JSON.stringify(canon(a)) === JSON.stringify(canon(b));
+const stripArchiver = (list) => (list || []).map((s) => { const c = { ...s }; for (const f of ARCHIVER_FIELDS) delete c[f]; return c; });
+
+/* Three-way merge of a record: base (what this page loaded), mine (my edits), theirs (what's on GitHub now).
+   Returns the merged record, or null when we both changed the same thing. */
+function mergeRecords(base, mine, theirs) {
+  const out = {};
+  const keys = new Set([...Object.keys(base), ...Object.keys(mine), ...Object.keys(theirs)]);
+  for (const k of keys) {
+    if (k === "updated") { out[k] = [mine[k], theirs[k]].filter(Boolean).sort().pop(); continue; }
+    if (k === "sources") {
+      const b = base.sources || [], m = mine.sources || [], t = theirs.sources || [];
+      if (same(m, b)) { out.sources = t; continue; }
+      if (same(t, b)) { out.sources = m; continue; }
+      // Only the archiver touched theirs: keep my edits, take its archive results for the same links.
+      if (same(stripArchiver(t), stripArchiver(b))) {
+        const byUrl = new Map(t.map((s) => [s.url, s]));
+        out.sources = m.map((s) => {
+          const theirsS = byUrl.get(s.url);
+          if (!theirsS || s.wayback) return s;
+          const c = { ...s };
+          for (const f of ARCHIVER_FIELDS) { if (theirsS[f] !== undefined) c[f] = theirsS[f]; }
+          return c;
+        });
+        continue;
+      }
+      if (same(m, t)) { out.sources = m; continue; }
+      return null;
+    }
+    if (same(mine[k], base[k])) out[k] = theirs[k];
+    else if (same(theirs[k], base[k]) || same(mine[k], theirs[k])) out[k] = mine[k];
+    else return null;
+  }
+  for (const k of Object.keys(out)) if (out[k] === undefined) delete out[k];
+  return out;
+}
+
 function cleanTopic(t) {
   return {
     id: t.id, title: (t.title || "").trim() || "Untitled topic", owner: t.owner || "unassigned",
     status: t.status || "idea", category: t.category || "", idea: t.idea || "", link: (t.link || "").trim(),
     popular: t.popular || "", actual: t.actual || "", hook: t.hook || "",
-    sources: (t.sources || []).filter((s) => (s.title || s.url || s.confirmed || "").trim()).map((s) => ({
-      title: (s.title || "").trim(), url: (s.url || "").trim(), confirmed: s.confirmed || "",
-      access: s.access || "opened", kind: s.kind || "secondary",
-    })),
+    sources: (t.sources || []).filter((s) => (s.title || s.url || s.confirmed || "").trim()).map(cleanSource),
     questions: (t.questions || []).map((q) => q.trim()).filter(Boolean),
     created: t.created || today(), updated: t.updated || today(),
   };

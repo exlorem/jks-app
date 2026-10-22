@@ -225,6 +225,9 @@ textarea.field { resize: vertical; min-height: 84px; }
 .source textarea { resize: vertical; min-height: 44px; }
 .source .tags { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .source .tags select { width: auto; border-color: var(--line); font-size: 15px; }
+/* Dropdowns get explicit colors so their option lists are readable in both themes. */
+.source select { background: var(--paper); color: var(--ink); padding: 5px 8px; }
+select option { background: var(--paper); color: var(--ink); }
 .acc-not-opened { color: var(--warn); font-weight: 700; }
 .open-link { font-size: 15px; white-space: nowrap; }
 .source .done { justify-self: start; }
@@ -874,6 +877,7 @@ function sourceCard(s, i, onEdit) {
   let host = "";
   if (url) { try { host = new URL(url).hostname.replace(/^www\./, ""); } catch {} }
   const title = s.title || host || "Untitled source";
+  const titlePending = !s.title && !!url;
   const wb = waybackState(s);
   const archives = (s.cited || s.wayback || s.archive_today) ? el("p", { class: "archives" },
     el("span", { class: "lbl-a", text: "Archived:" }),
@@ -894,7 +898,7 @@ function sourceCard(s, i, onEdit) {
       el("button", { class: "btn quiet small edit", text: "Edit", "aria-label": "Edit source: " + title, onclick: onEdit }),
     ),
     el("p", { class: "stitle-read" }, url ? el("a", { href: url, target: "_blank", rel: "noopener noreferrer", text: title }) : title),
-    el("p", { class: "host", text: url ? host : "No link found" }),
+    el("p", { class: "host", text: url ? host + (titlePending ? ". Title is filled in from the page after saving." : "") : "No link found" }),
     el("p", { class: "conf" + (s.confirmed ? "" : " none"), text: s.confirmed || "Nothing noted yet about what this confirms." }),
     archives,
   );
@@ -947,7 +951,7 @@ function sourceRow(t, s, i, redraw, onDone) {
   const url = safeUrl(s.url);
   return el("div", { class: "source" },
     el("div", { class: "top" },
-      bind(s, "title", el("input", { class: "stitle", "aria-label": "Source title", placeholder: "Title of the source" })),
+      bind(s, "title", el("input", { class: "stitle", "aria-label": "Source title", placeholder: "Title (leave blank to fill in from the page)" })),
       url ? el("a", { class: "open-link", href: url, target: "_blank", rel: "noopener noreferrer", text: "Open" }) : el("span"),
     ),
     (() => {
@@ -1054,13 +1058,53 @@ function cleanSource(s) {
   return out;
 }
 
-/* Fields the background archiver writes. A save never conflicts over these alone. */
-const ARCHIVER_FIELDS = ["wayback", "wayback_status", "wayback_attempts"];
 /* Compare by content, ignoring key order. */
 const canon = (v) => Array.isArray(v) ? v.map(canon)
   : v && typeof v === "object" ? Object.fromEntries(Object.keys(v).sort().map((k) => [k, canon(v[k])])) : v;
 const same = (a, b) => JSON.stringify(canon(a)) === JSON.stringify(canon(b));
-const stripArchiver = (list) => (list || []).map((s) => { const c = { ...s }; for (const f of ARCHIVER_FIELDS) delete c[f]; return c; });
+
+/* Merge field by field: whoever changed a field wins; both changing it differently is a conflict. */
+function mergeFields(b, m, t) {
+  const out = {};
+  for (const f of new Set([...Object.keys(b), ...Object.keys(m), ...Object.keys(t)])) {
+    if (same(m[f], b[f])) out[f] = t[f];
+    else if (same(t[f], b[f]) || same(m[f], t[f])) out[f] = m[f];
+    else return null;
+  }
+  for (const f of Object.keys(out)) if (out[f] === undefined) delete out[f];
+  return out;
+}
+
+/* Merge source lists, matching sources by link (or by title when there is no link).
+   Background fills (titles, archive links) and edits to different sources combine;
+   only real overlaps return null. */
+function mergeSources(b, m, t) {
+  if (same(m, b)) return t;
+  if (same(t, b) || same(m, t)) return m;
+  const key = (s) => (s.url ? "u:" + s.url : "t:" + (s.title || ""));
+  const index = (list) => {
+    const map = new Map();
+    for (const s of list) { const k = key(s); if (map.has(k)) return null; map.set(k, s); }
+    return map;
+  };
+  const B = index(b), M = index(m), T = index(t);
+  if (!B || !M || !T) return null;   // duplicate keys: can't match safely
+  const out = [];
+  for (const s of m) {
+    const k = key(s), bs = B.get(k), ts = T.get(k);
+    if (bs && ts) { const f = mergeFields(bs, s, ts); if (!f) return null; out.push(f); }
+    else if (bs && !ts) { if (!same(s, bs)) return null; /* they removed it, I didn't touch it */ }
+    else if (!bs && ts) { const f = mergeFields({}, s, ts); if (!f) return null; out.push(f); }
+    else out.push(s);   // I added it
+  }
+  for (const s of t) {
+    const k = key(s);
+    if (M.has(k)) continue;
+    if (!B.has(k)) out.push(s);                       // they added it
+    else if (!same(s, B.get(k))) return null;         // I removed it, they changed it
+  }
+  return out;
+}
 
 /* Three-way merge of a record: base (what this page loaded), mine (my edits), theirs (what's on GitHub now).
    Returns the merged record, or null when we both changed the same thing. */
@@ -1070,23 +1114,10 @@ function mergeRecords(base, mine, theirs) {
   for (const k of keys) {
     if (k === "updated") { out[k] = [mine[k], theirs[k]].filter(Boolean).sort().pop(); continue; }
     if (k === "sources") {
-      const b = base.sources || [], m = mine.sources || [], t = theirs.sources || [];
-      if (same(m, b)) { out.sources = t; continue; }
-      if (same(t, b)) { out.sources = m; continue; }
-      // Only the archiver touched theirs: keep my edits, take its archive results for the same links.
-      if (same(stripArchiver(t), stripArchiver(b))) {
-        const byUrl = new Map(t.map((s) => [s.url, s]));
-        out.sources = m.map((s) => {
-          const theirsS = byUrl.get(s.url);
-          if (!theirsS || s.wayback) return s;
-          const c = { ...s };
-          for (const f of ARCHIVER_FIELDS) { if (theirsS[f] !== undefined) c[f] = theirsS[f]; }
-          return c;
-        });
-        continue;
-      }
-      if (same(m, t)) { out.sources = m; continue; }
-      return null;
+      const merged = mergeSources(base.sources || [], mine.sources || [], theirs.sources || []);
+      if (!merged) return null;
+      out.sources = merged;
+      continue;
     }
     if (same(mine[k], base[k])) out[k] = theirs[k];
     else if (same(theirs[k], base[k]) || same(mine[k], theirs[k])) out[k] = mine[k];

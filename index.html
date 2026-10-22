@@ -1,0 +1,1080 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://api.github.com; img-src 'self' data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'">
+<meta name="referrer" content="no-referrer">
+<title>JK, We're Serious</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231A2233'/%3E%3Ctext x='16' y='22' font-family='sans-serif' font-size='15' font-weight='800' fill='%23EEF1F4' text-anchor='middle'%3EJK%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --fog: #EEF1F4;
+  --paper: #FFFFFF;
+  --ink: #1A2233;
+  --slate: #5A6578;
+  --line: #D5DBE3;
+  --soft: #E3E8EE;
+  --cobalt: #2D5BE3;
+  --cobalt-ink: #FFFFFF;
+  --st-idea: #6B7587;
+  --st-researching: #2D5BE3;
+  --st-verified: #1B8A57;
+  --st-dropped: #9AA3B0;
+  --st-aired: #7A4FD8;
+  --warn: #B4471B;
+  --belief-bg: #E6EAF0;
+  --truth-bg: #FFFFFF;
+  --focus: #2D5BE3;
+  --display: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --body: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --fog: #12161F; --paper: #1A2030; --ink: #E7EBF2; --slate: #9AA4B6; --line: #2C3446; --soft: #232A3A;
+    --cobalt: #6D8FF5; --cobalt-ink: #0E1220; --st-idea: #8E98AA; --st-researching: #6D8FF5; --st-verified: #4CC08A;
+    --st-dropped: #6B7486; --st-aired: #A88BF0; --warn: #F08A5D; --belief-bg: #161B27; --truth-bg: #1F2638; --focus: #8FA9FF;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --fog: #12161F; --paper: #1A2030; --ink: #E7EBF2; --slate: #9AA4B6; --line: #2C3446; --soft: #232A3A;
+  --cobalt: #6D8FF5; --cobalt-ink: #0E1220; --st-idea: #8E98AA; --st-researching: #6D8FF5; --st-verified: #4CC08A;
+  --st-dropped: #6B7486; --st-aired: #A88BF0; --warn: #F08A5D; --belief-bg: #161B27; --truth-bg: #1F2638; --focus: #8FA9FF;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--fog); color: var(--ink);
+  font: 400 17px/1.55 var(--body);
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+a { color: var(--cobalt); }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+[hidden] { display: none !important; }
+
+/* ---------- top bar ---------- */
+.bar {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 16px; padding-top: max(10px, env(safe-area-inset-top));
+  background: var(--fog); border-bottom: 1px solid var(--line);
+}
+.mark {
+  font: 800 21px/1 var(--display); letter-spacing: -0.02em; margin: 0; white-space: nowrap;
+}
+.mark .jk { display: inline-block; transform: rotate(-4deg); margin-right: 2px; }
+.mark .serious { font-weight: 700; }
+.tabs { display: flex; gap: 4px; margin-left: auto; }
+.tab {
+  border: 0; background: transparent; padding: 8px 12px; border-radius: 999px; cursor: pointer;
+  color: var(--slate); font-weight: 700;
+}
+.tab[aria-current="page"] { background: var(--ink); color: var(--fog); }
+@media (max-width: 480px) {
+  .bar { gap: 8px; }
+  .mark .serious { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .tab { padding: 8px 10px; }
+}
+.iconbtn {
+  flex: none;
+  border: 1px solid var(--line); background: var(--paper); width: 38px; height: 38px; border-radius: 10px;
+  display: grid; place-items: center; cursor: pointer; color: var(--slate);
+}
+
+/* ---------- layout ---------- */
+main { max-width: 1180px; margin: 0 auto; padding: 16px; }
+.split { display: grid; gap: 20px; }
+@media (min-width: 960px) {
+  .split.has-detail { grid-template-columns: minmax(300px, 380px) 1fr; align-items: start; }
+  .split.has-detail .listcol { position: sticky; top: 76px; max-height: calc(100vh - 92px); overflow: auto; }
+}
+@media (max-width: 959px) {
+  .split.has-detail .listcol { display: none; }
+}
+
+/* ---------- buttons ---------- */
+.btn {
+  border: 1px solid var(--line); background: var(--paper); color: var(--ink);
+  padding: 9px 14px; border-radius: 10px; cursor: pointer; font-weight: 700; line-height: 1.2;
+}
+.btn.primary { background: var(--cobalt); border-color: var(--cobalt); color: var(--cobalt-ink); }
+.btn.quiet { background: transparent; border-color: transparent; color: var(--slate); padding-left: 6px; padding-right: 6px; }
+.btn:disabled { opacity: .5; cursor: default; }
+.btn.small { padding: 6px 10px; font-size: 15px; }
+
+/* ---------- list ---------- */
+.toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
+.search {
+  flex: 1; min-width: 0; border: 1px solid var(--line); background: var(--paper);
+  border-radius: 10px; padding: 9px 12px;
+}
+.filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.chip {
+  border: 1px solid var(--line); background: transparent; border-radius: 999px; padding: 4px 11px;
+  cursor: pointer; font-size: 15px; color: var(--slate);
+}
+.chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--fog); }
+.count { color: var(--slate); font-size: 15px; margin: 0 0 8px; }
+.rows { list-style: none; margin: 0; padding: 0; }
+.row {
+  display: grid; grid-template-columns: 44px 1fr auto; gap: 4px 10px; align-items: baseline;
+  padding: 11px 10px; border-radius: 10px; cursor: pointer; border: 1px solid transparent;
+}
+.row:hover { background: var(--soft); }
+.row[aria-selected="true"] { background: var(--paper); border-color: var(--line); }
+.row .num { color: var(--slate); font-variant-numeric: tabular-nums; font-size: 15px; }
+.row .ttl { font-weight: 700; line-height: 1.3; }
+.row .sub { grid-column: 2 / 4; color: var(--slate); font-size: 14.5px; }
+.status {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700; white-space: nowrap;
+  color: var(--st, var(--slate));
+}
+.status::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.empty { color: var(--slate); padding: 24px 6px; }
+.empty strong { color: var(--ink); }
+
+/* ---------- sheet ---------- */
+.sheet { background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 18px; }
+@media (min-width: 700px) { .sheet { padding: 26px 30px; } }
+.sheet-head { display: flex; gap: 10px; align-items: center; margin-bottom: 4px; }
+.back { display: none; }
+@media (max-width: 959px) { .back { display: inline-block; } }
+.idtag { font: 700 15px/1 var(--display); color: var(--slate); font-variant-numeric: tabular-nums; }
+.titlefield {
+  width: 100%; border: 0; border-bottom: 2px solid transparent; background: transparent; padding: 2px 0 6px;
+  font: 800 clamp(26px, 4vw, 38px)/1.12 var(--display); letter-spacing: -0.02em;
+  resize: none; overflow: hidden; display: block;
+}
+.titlefield:hover { border-bottom-color: var(--line); }
+.titlefield:focus { outline: none; border-bottom-color: var(--cobalt); }
+.meta { display: flex; flex-wrap: wrap; gap: 10px 18px; margin: 10px 0 4px; align-items: end; }
+.meta label { display: grid; gap: 2px; font-size: 14px; color: var(--slate); }
+.meta select, .meta input {
+  border: 1px solid var(--line); background: var(--paper); border-radius: 8px; padding: 6px 8px; font-size: 16px; color: var(--ink);
+}
+.appeared { font-size: 15px; color: var(--slate); margin: 10px 0 0; }
+.appeared a { font-weight: 700; }
+
+/* the claim vs truth split: the page's one loud moment */
+.verdict { display: grid; gap: 0; margin: 22px 0 8px; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); }
+@media (min-width: 760px) { .verdict { grid-template-columns: 1fr 1.25fr; } }
+.verdict > div { padding: 16px 18px 12px; display: grid; gap: 6px; align-content: start; }
+.belief { background: var(--belief-bg); }
+.truth { background: var(--truth-bg); border-top: 1px solid var(--line); }
+@media (min-width: 760px) { .truth { border-top: 0; border-left: 1px solid var(--line); } }
+.verdict h3 { margin: 0; font: 700 19px/1.2 var(--display); }
+.belief h3 { color: var(--slate); }
+.belief h3 s { text-decoration-thickness: 2px; text-decoration-color: var(--warn); }
+.verdict textarea { border: 0; background: transparent; resize: none; overflow: hidden; min-height: 96px; padding: 0; line-height: 1.55; }
+.belief textarea { color: var(--slate); font-style: italic; }
+.verdict textarea:focus { outline: none; }
+.verdict > div:focus-within { box-shadow: inset 0 0 0 2px var(--cobalt); }
+
+.block { margin-top: 22px; }
+.block h3 { font: 700 19px/1.2 var(--display); margin: 0 0 8px; display: flex; align-items: baseline; gap: 10px; }
+.block h3 .aside { font: 400 15px/1 var(--body); color: var(--slate); }
+.field { width: 100%; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); padding: 10px 12px; line-height: 1.5; }
+textarea.field { resize: vertical; min-height: 84px; }
+.twocol { display: grid; gap: 12px; }
+@media (min-width: 700px) { .twocol { grid-template-columns: 1fr 1fr; } }
+.lbl { display: grid; gap: 4px; font-size: 15px; color: var(--slate); }
+
+/* sources */
+.sources { display: grid; gap: 10px; }
+.source { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; display: grid; gap: 8px; }
+.source .top { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: start; }
+.source input, .source select, .source textarea {
+  border: 1px solid transparent; background: transparent; border-radius: 6px; padding: 3px 4px; width: 100%;
+}
+.source input:hover, .source textarea:hover, .source select:hover { border-color: var(--line); }
+.source input:focus, .source textarea:focus, .source select:focus { border-color: var(--cobalt); outline: none; }
+.source .stitle { font-weight: 700; }
+.source .surl { font-size: 15px; color: var(--cobalt); }
+.source textarea { resize: vertical; min-height: 44px; }
+.source .tags { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.source .tags select { width: auto; border-color: var(--line); font-size: 15px; }
+.acc-not-opened { color: var(--warn); font-weight: 700; }
+.open-link { font-size: 15px; white-space: nowrap; }
+
+/* questions */
+.qs { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.qs li { display: grid; grid-template-columns: 1fr auto; gap: 6px; align-items: start; }
+.qs input { border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; background: var(--paper); width: 100%; }
+
+/* save bar */
+.savebar {
+  position: sticky; bottom: 0; margin: 22px -18px -18px; padding: 12px 18px;
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+  background: var(--paper); border-top: 1px solid var(--line); border-radius: 0 0 16px 16px;
+  display: flex; gap: 10px; align-items: center;
+}
+@media (min-width: 700px) { .savebar { margin: 26px -30px -26px; padding-left: 30px; padding-right: 30px; } }
+.savestate { color: var(--slate); font-size: 15px; margin-right: auto; }
+.savestate.dirty { color: var(--warn); font-weight: 700; }
+
+/* episodes */
+.slot { display: grid; grid-template-columns: 140px 1fr auto; gap: 8px; align-items: center; }
+@media (max-width: 560px) { .slot { grid-template-columns: 1fr; } }
+.slot select, .slot input { border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; background: var(--paper); width: 100%; }
+.topicpick { position: relative; }
+.picklist {
+  position: absolute; z-index: 10; left: 0; right: 0; top: calc(100% + 4px); background: var(--paper);
+  border: 1px solid var(--line); border-radius: 10px; max-height: 240px; overflow: auto; margin: 0; padding: 4px; list-style: none;
+  box-shadow: 0 10px 30px rgba(20, 30, 50, .18);
+}
+.picklist li { padding: 7px 9px; border-radius: 7px; cursor: pointer; }
+.picklist li[aria-selected="true"], .picklist li:hover { background: var(--soft); }
+
+/* dialogs */
+dialog {
+  border: 1px solid var(--line); border-radius: 16px; padding: 22px; background: var(--paper); color: var(--ink);
+  width: min(520px, calc(100vw - 32px));
+}
+dialog::backdrop { background: rgba(12, 16, 26, .45); }
+dialog h2 { font: 800 26px/1.15 var(--display); margin: 0 0 6px; letter-spacing: -0.01em; }
+dialog p { margin: 0 0 14px; color: var(--slate); }
+.dlg-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }
+.formgrid { display: grid; gap: 12px; }
+
+/* sign in */
+.signin { max-width: 560px; margin: 8vh auto 0; }
+.signin h1 { font: 800 clamp(40px, 9vw, 64px)/0.98 var(--display); letter-spacing: -0.03em; margin: 0 0 14px; }
+.signin h1 .jk { display: inline-block; transform: rotate(-5deg); }
+.signin ol { padding-left: 22px; color: var(--slate); }
+.signin ol li { margin-bottom: 6px; }
+.signin code { background: var(--soft); padding: 1px 5px; border-radius: 5px; font-size: 15px; }
+.check { display: flex; gap: 8px; align-items: center; color: var(--slate); }
+
+.toast {
+  position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); z-index: 50;
+  background: var(--ink); color: var(--fog); padding: 10px 16px; border-radius: 10px; max-width: calc(100vw - 32px);
+  box-shadow: 0 8px 24px rgba(0,0,0,.2);
+}
+.toast.error { background: var(--warn); color: #fff; }
+.banner { border: 1px solid var(--warn); color: var(--ink); background: var(--paper); border-radius: 12px; padding: 12px 14px; margin-bottom: 14px; }
+.banner strong { color: var(--warn); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .verdict { animation: settle .35s ease-out; }
+  @keyframes settle { from { opacity: .4; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+}
+</style>
+</head>
+<body>
+<header class="bar">
+  <p class="mark"><span class="jk">JK,</span> <span class="serious">We're Serious</span></p>
+  <nav class="tabs" aria-label="Sections" id="tabs" hidden>
+    <button class="tab" data-view="topics" aria-current="page">Topics</button>
+    <button class="tab" data-view="episodes">Episodes</button>
+  </nav>
+  <button class="iconbtn" id="menuBtn" aria-label="Settings" title="Settings" hidden>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+  </button>
+</header>
+
+<main id="app"></main>
+
+<dialog id="addDlg" aria-labelledby="addTitle">
+  <form method="dialog" id="addForm" class="formgrid">
+    <h2 id="addTitle">New topic</h2>
+    <p>Just the idea for now. Research comes later.</p>
+    <label class="lbl">Topic name
+      <input class="field" name="title" required maxlength="140" autocomplete="off" placeholder="e.g. Napoleon was short">
+    </label>
+    <label class="lbl">The idea, in a sentence
+      <textarea class="field" name="idea" rows="3" placeholder="What did you hear or read?"></textarea>
+    </label>
+    <div class="twocol">
+      <label class="lbl">Whose topic
+        <select class="field" name="owner"></select>
+      </label>
+      <label class="lbl">Where you saw it (optional)
+        <input class="field" name="link" type="url" inputmode="url" placeholder="https://">
+      </label>
+    </div>
+    <div class="dlg-actions">
+      <button class="btn" value="cancel" formnovalidate>Cancel</button>
+      <button class="btn primary" value="add" id="addSubmit">Add topic</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="settingsDlg" aria-labelledby="setTitle">
+  <h2 id="setTitle">Settings</h2>
+  <p id="whoami"></p>
+  <div class="formgrid">
+    <label class="lbl">Theme
+      <select class="field" id="themeSel">
+        <option value="">Match my device</option>
+        <option value="light">Light</option>
+        <option value="dark">Dark</option>
+      </select>
+    </label>
+  </div>
+  <div class="dlg-actions">
+    <button class="btn" id="signOut">Sign out on this device</button>
+    <button class="btn primary" id="setClose">Done</button>
+  </div>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+"use strict";
+
+/* ===================== config ===================== */
+const params = new URLSearchParams(location.search);
+const REPO = params.get("repo") || "exlorem/JKS";
+const [OWNER_LOGIN, REPO_NAME] = REPO.split("/");
+const BRANCH = "main";
+const API = "https://api.github.com";
+
+const OWNERS = [["keaven", "Keaven"], ["janice", "Janice"], ["unassigned", "Unassigned"]];
+const STATUSES = [["idea", "Idea"], ["researching", "Researching"], ["verified", "Verified"], ["dropped", "Dropped"]];
+const CATEGORIES = [
+  ["", "No category"], ["history", "History"], ["science", "Science"], ["food-drink", "Food & drink"],
+  ["games-tech", "Games & tech"], ["language-words", "Language & words"], ["health-body", "Health & body"],
+  ["pop-culture", "Pop culture"], ["law-government", "Law & government"], ["other", "Other"],
+];
+const ACCESS = [["opened", "Opened"], ["snippet", "Snippet only"], ["not-opened", "Not opened"]];
+const KINDS = [["primary", "Primary"], ["secondary", "Secondary"], ["tertiary", "Tertiary"], ["weak", "Weak / single origin"]];
+const EP_STATUSES = [["planned", "Planned"], ["recorded", "Recorded"], ["published", "Published"]];
+
+const nameOf = (list, v) => (list.find(([k]) => k === v) || [v, v || "None"])[1];
+const pad3 = (n) => String(n).padStart(3, "0");
+const today = () => new Date().toLocaleDateString("en-CA");
+
+/* ===================== state ===================== */
+const S = {
+  token: "", user: null,
+  topics: new Map(), episodes: new Map(),   // id -> {data, sha}
+  view: "topics", selected: null, epSelected: null,
+  q: "", fOwner: "", fStatus: "",
+  draft: null, draftKind: null, dirty: false, saving: false,
+};
+
+/* ===================== storage (wrapped: private windows can throw) ===================== */
+const store = {
+  get(k) { try { return localStorage.getItem(k) ?? sessionStorage.getItem(k); } catch { return null; } },
+  set(k, v, remember) {
+    try { (remember ? localStorage : sessionStorage).setItem(k, v); } catch {}
+  },
+  del(k) { try { localStorage.removeItem(k); sessionStorage.removeItem(k); } catch {} },
+};
+
+/* ===================== GitHub API ===================== */
+class GHError extends Error { constructor(status, msg) { super(msg); this.status = status; } }
+
+async function gh(method, path, body) {
+  const res = await fetch(API + path, {
+    method,
+    headers: {
+      Authorization: "Bearer " + S.token,
+      Accept: "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28",
+      ...(body ? { "Content-Type": "application/json" } : {}),
+    },
+    body: body ? JSON.stringify(body) : undefined,
+    cache: "no-store",
+  });
+  const text = await res.text();
+  let data = null;
+  try { data = text ? JSON.parse(text) : null; } catch {}
+  if (!res.ok) throw new GHError(res.status, (data && data.message) || res.statusText);
+  return data;
+}
+
+const b64encode = (str) => {
+  const bytes = new TextEncoder().encode(str);
+  let bin = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+};
+const b64decode = (b64) => new TextDecoder().decode(Uint8Array.from(atob(b64.replace(/\n/g, "")), (c) => c.charCodeAt(0)));
+
+/* Load every file in a data folder in one GraphQL call; fall back to REST. */
+async function loadAll() {
+  const q = `query($o:String!,$n:String!){repository(owner:$o,name:$n){
+    t:object(expression:"${BRANCH}:data/topics"){...on Tree{entries{name oid object{...on Blob{text}}}}}
+    e:object(expression:"${BRANCH}:data/episodes"){...on Tree{entries{name oid object{...on Blob{text}}}}}}}`;
+  let t, e;
+  try {
+    const r = await gh("POST", "/graphql", { query: q, variables: { o: OWNER_LOGIN, n: REPO_NAME } });
+    if (r.errors) throw new Error(r.errors[0].message);
+    const repo = r.data.repository;
+    t = (repo.t && repo.t.entries) || [];
+    e = (repo.e && repo.e.entries) || [];
+    t = t.map((x) => ({ name: x.name, sha: x.oid, text: x.object && x.object.text }));
+    e = e.map((x) => ({ name: x.name, sha: x.oid, text: x.object && x.object.text }));
+  } catch (err) {
+    if (err instanceof GHError && (err.status === 401)) throw err;
+    [t, e] = await Promise.all([restFolder("data/topics"), restFolder("data/episodes")]);
+  }
+  S.topics = parseFolder(t);
+  S.episodes = parseFolder(e);
+}
+async function restFolder(path) {
+  let list;
+  try { list = await gh("GET", `/repos/${REPO}/contents/${path}?ref=${BRANCH}`); }
+  catch (err) { if (err.status === 404) return []; throw err; }
+  const files = list.filter((f) => f.type === "file" && f.name.endsWith(".json"));
+  return Promise.all(files.map(async (f) => {
+    const full = await gh("GET", `/repos/${REPO}/contents/${f.path}?ref=${BRANCH}`);
+    return { name: f.name, sha: full.sha, text: b64decode(full.content) };
+  }));
+}
+function parseFolder(entries) {
+  const m = new Map();
+  for (const x of entries) {
+    if (!x.name.endsWith(".json") || x.text == null) continue;
+    try { const d = JSON.parse(x.text); if (Number.isInteger(d.id)) m.set(d.id, { data: d, sha: x.sha }); } catch {}
+  }
+  return m;
+}
+
+/* Save one record. Without sha it creates; GitHub rejects a create if the file exists. */
+async function putRecord(kind, rec, sha, message) {
+  const path = `data/${kind}/${pad3(rec.id)}.json`;
+  const body = { message, content: b64encode(JSON.stringify(rec, null, 2) + "\n"), branch: BRANCH };
+  if (sha) body.sha = sha;
+  const r = await gh("PUT", `/repos/${REPO}/contents/${path}`, body);
+  return r.content.sha;
+}
+async function fetchRecord(kind, id) {
+  const f = await gh("GET", `/repos/${REPO}/contents/data/${kind}/${pad3(id)}.json?ref=${BRANCH}`);
+  return { data: JSON.parse(b64decode(f.content)), sha: f.sha };
+}
+
+/* ===================== derived data ===================== */
+function episodesFor(topicId) {
+  const out = [];
+  for (const { data: ep } of S.episodes.values()) {
+    if ((ep.slots || []).some((s) => s.topic === topicId)) out.push(ep);
+  }
+  return out.sort((a, b) => a.id - b.id);
+}
+function airedIn(topicId) {
+  return episodesFor(topicId).filter((ep) => ep.status === "recorded" || ep.status === "published");
+}
+function topicTitle(id) {
+  const t = S.topics.get(id);
+  return t ? t.data.title : null;
+}
+
+/* ===================== utilities ===================== */
+function el(tag, attrs = {}, ...kids) {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (v == null || v === false) continue;
+    if (k === "class") n.className = v;
+    else if (k === "text") n.textContent = v;
+    else if (k.startsWith("on")) n.addEventListener(k.slice(2), v);
+    else if (k === "value") n.value = v;
+    else n.setAttribute(k, v === true ? "" : v);
+  }
+  for (const kid of kids.flat()) if (kid != null && kid !== false) n.append(kid.nodeType ? kid : document.createTextNode(kid));
+  return n;
+}
+function options(list, current) {
+  return list.map(([v, label]) => el("option", { value: v, selected: v === current ? true : null, text: label }));
+}
+function safeUrl(u) {
+  try { const x = new URL(u); return x.protocol === "https:" || x.protocol === "http:" ? x.href : null; } catch { return null; }
+}
+let toastTimer;
+function toast(msg, isError) {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.className = "toast" + (isError ? " error" : ""); t.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => (t.hidden = true), isError ? 7000 : 2600);
+}
+function errText(err) {
+  if (err.status === 401) return "Your token was rejected. It may have expired; sign out and paste a new one.";
+  if (err.status === 403) return "Your token can't write to this repo. It needs Contents: Read and write on " + REPO + ".";
+  if (err.status === 404) return "Couldn't find " + REPO + ". Check that your token has access to it.";
+  if (err.status === 409 || err.status === 422) return "Someone else saved this first.";
+  return "GitHub said: " + err.message;
+}
+
+/* ===================== router ===================== */
+function readHash() {
+  const h = location.hash.slice(1);
+  let m;
+  if ((m = h.match(/^topic\/(\d+)$/))) { S.view = "topics"; S.selected = +m[1]; }
+  else if ((m = h.match(/^episode\/(\d+)$/))) { S.view = "episodes"; S.epSelected = +m[1]; }
+  else if (h === "episodes") { S.view = "episodes"; S.epSelected = null; }
+  else { S.view = "topics"; S.selected = null; }
+}
+function go(hash) {
+  if (S.dirty && !confirm("You have unsaved changes. Leave without saving?")) return false;
+  S.dirty = false;
+  if (location.hash.slice(1) === hash) { readHash(); render(); }
+  else location.hash = hash;
+  return true;
+}
+window.addEventListener("hashchange", () => { S.dirty = false; readHash(); render(); });
+window.addEventListener("beforeunload", (e) => { if (S.dirty) { e.preventDefault(); e.returnValue = ""; } });
+
+/* ===================== render ===================== */
+const app = document.getElementById("app");
+
+function render() {
+  document.getElementById("tabs").hidden = !S.token;
+  document.getElementById("menuBtn").hidden = !S.token;
+  if (!S.token) return renderSignIn();
+  for (const b of document.querySelectorAll(".tab")) {
+    if (b.dataset.view === S.view) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
+  }
+  if (S.view === "episodes") renderEpisodes(); else renderTopics();
+}
+
+/* ---------- sign in ---------- */
+function renderSignIn(errMsg) {
+  const tok = el("input", { class: "field", type: "password", id: "tok", autocomplete: "off", spellcheck: "false", placeholder: "github_pat_…" });
+  const remember = el("input", { type: "checkbox", id: "remember" });
+  const go = el("button", { class: "btn primary", type: "submit", text: "Sign in" });
+  const form = el("form", { class: "formgrid", onsubmit: async (e) => {
+    e.preventDefault();
+    go.disabled = true; go.textContent = "Checking…";
+    try { await signIn(tok.value.trim(), remember.checked); }
+    catch (err) { renderSignIn(errText(err)); }
+  } },
+    el("label", { class: "lbl", for: "tok" }, "Your GitHub token", tok),
+    el("label", { class: "check" }, remember, "Remember me on this device"),
+    el("div", {}, go),
+  );
+  app.replaceChildren(el("section", { class: "signin" },
+    el("h1", {}, el("span", { class: "jk" }, "JK,"), " we're serious."),
+    el("p", {}, "The research desk for the show. Sign in with a GitHub token that can read and write ", el("code", { text: REPO }), "."),
+    errMsg ? el("div", { class: "banner", role: "alert" }, el("strong", { text: "Sign in didn't work. " }), errMsg) : null,
+    form,
+    el("details", { class: "block" },
+      el("summary", { text: "How to make a token" }),
+      el("ol", {},
+        el("li", {}, "On GitHub, open Settings, then Developer settings, then Personal access tokens, then Fine-grained tokens."),
+        el("li", {}, "Choose ", el("strong", { text: "Generate new token" }), ". Set the resource owner to ", el("code", { text: OWNER_LOGIN }), "."),
+        el("li", {}, "Under Repository access, pick ", el("strong", { text: "Only select repositories" }), " and choose ", el("code", { text: REPO_NAME }), "."),
+        el("li", {}, "Under Permissions, set ", el("strong", { text: "Contents" }), " to Read and write. Nothing else is needed."),
+        el("li", {}, "Generate it, copy it, and paste it above. It stays in this browser and is only sent to GitHub."),
+      ),
+    ),
+  ));
+  tok.focus();
+}
+
+async function signIn(token, remember) {
+  S.token = token;
+  try {
+    const [user] = await Promise.all([gh("GET", "/user"), gh("GET", `/repos/${REPO}`)]);
+    S.user = user;
+    await loadAll();
+  } catch (err) { S.token = ""; throw err; }
+  store.del("jks.token");
+  store.set("jks.token", token, remember);
+  render();
+}
+
+/* ---------- topics ---------- */
+function filteredTopics() {
+  const q = S.q.trim().toLowerCase();
+  return [...S.topics.values()].map((x) => x.data).filter((t) => {
+    if (S.fOwner && t.owner !== S.fOwner) return false;
+    if (S.fStatus === "aired") { if (!airedIn(t.id).length) return false; }
+    else if (S.fStatus && t.status !== S.fStatus) return false;
+    if (!q) return true;
+    const hay = [t.title, t.idea, t.popular, t.actual, "#" + t.id].join(" ").toLowerCase();
+    return hay.includes(q);
+  }).sort((a, b) => b.id - a.id);
+}
+
+function statusBadge(t) {
+  const aired = airedIn(t.id);
+  if (aired.length) {
+    const ep = aired[aired.length - 1];
+    return el("span", { class: "status", style: "--st: var(--st-aired)", text: (ep.status === "published" ? "Aired" : "Recorded") + ", ep " + pad3(ep.id) });
+  }
+  return el("span", { class: "status", style: `--st: var(--st-${t.status})`, text: nameOf(STATUSES, t.status) });
+}
+
+function topicList() {
+  const list = filteredTopics();
+  const search = el("input", { class: "search", type: "search", placeholder: "Search topics", "aria-label": "Search topics", value: S.q,
+    oninput: (e) => { S.q = e.target.value; renderListOnly(); } });
+  const chips = (label, key, list2) => list2.map(([v, l]) => el("button", {
+    class: "chip", "aria-pressed": S[key] === v ? "true" : "false", text: l,
+    onclick: () => { S[key] = S[key] === v ? "" : v; renderListOnly(); },
+  }));
+  const rows = el("ul", { class: "rows", role: "listbox", "aria-label": "Topics" },
+    list.map((t) => el("li", {
+      class: "row", role: "option", tabindex: "0", "aria-selected": S.selected === t.id ? "true" : "false",
+      onclick: () => go("topic/" + t.id),
+      onkeydown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go("topic/" + t.id); } },
+    },
+      el("span", { class: "num", text: "#" + t.id }),
+      el("span", { class: "ttl", text: t.title }),
+      statusBadge(t),
+      el("span", { class: "sub", text: [nameOf(OWNERS, t.owner), t.category ? nameOf(CATEGORIES, t.category) : null].filter(Boolean).join(", ") }),
+    )),
+  );
+  const empty = S.topics.size === 0
+    ? el("div", { class: "empty" }, el("strong", { text: "No topics yet. " }), "Add the first thing that made you say \"wait, really?\"")
+    : list.length === 0 ? el("div", { class: "empty", text: "Nothing matches. Clear the search or a filter." }) : null;
+  return el("div", { class: "listcol", id: "listcol" },
+    el("div", { class: "toolbar" }, search, el("button", { class: "btn primary", text: "Add topic", onclick: openAdd })),
+    el("div", { class: "filters", role: "group", "aria-label": "Filter by owner" }, chips("Owner", "fOwner", OWNERS.slice(0, 2))),
+    el("div", { class: "filters", role: "group", "aria-label": "Filter by status" }, chips("Status", "fStatus", [...STATUSES, ["aired", "Aired"]])),
+    el("p", { class: "count", text: list.length === 1 ? "1 topic" : list.length + " topics" }),
+    empty || rows,
+  );
+}
+function renderListOnly() {
+  const old = document.getElementById("listcol");
+  if (!old) return;
+  const focusedSearch = document.activeElement && document.activeElement.classList.contains("search");
+  const pos = focusedSearch ? document.activeElement.selectionStart : null;
+  const fresh = topicList();
+  old.replaceWith(fresh);
+  if (focusedSearch) { const s = fresh.querySelector(".search"); s.focus(); s.setSelectionRange(pos, pos); }
+}
+
+function renderTopics() {
+  const rec = S.selected != null ? S.topics.get(S.selected) : null;
+  if (S.selected != null && !rec) { S.selected = null; }
+  const wrap = el("div", { class: "split" + (rec ? " has-detail" : "") }, topicList());
+  if (rec) {
+    S.draft = structuredClone(rec.data); S.draftKind = "topics"; S.dirty = false;
+    wrap.append(topicSheet(S.draft));
+  }
+  app.replaceChildren(wrap);
+}
+
+function bind(obj, key, node, prop = "value") {
+  node[prop] = obj[key] ?? "";
+  node.addEventListener("input", () => { obj[key] = node[prop]; markDirty(); });
+  node.addEventListener("change", () => { obj[key] = node[prop]; markDirty(); });
+  if (node.tagName === "TEXTAREA") autosize(node);
+  return node;
+}
+/* Text boxes grow with their content, so nothing scrolls inside a box. */
+function autosize(ta) {
+  const fit = () => {
+    if (!ta.isConnected) return;
+    ta.style.height = "auto";
+    ta.style.height = ta.scrollHeight + 2 + "px";
+  };
+  ta._fit = fit;
+  ta.addEventListener("input", fit);
+  requestAnimationFrame(fit);
+}
+window.addEventListener("resize", () => {
+  for (const ta of document.querySelectorAll("textarea")) if (ta._fit) ta._fit();
+});
+function markDirty() {
+  if (!S.dirty) {
+    S.dirty = true;
+    const s = document.getElementById("savestate");
+    if (s) { s.textContent = "Unsaved changes"; s.classList.add("dirty"); }
+  }
+}
+
+function topicSheet(t) {
+  t.sources = t.sources || []; t.questions = t.questions || [];
+  const appeared = episodesFor(t.id);
+
+  const sourcesBox = el("div", { class: "sources" });
+  const drawSources = () => {
+    sourcesBox.replaceChildren(...(t.sources.length ? t.sources.map((s, i) => sourceRow(t, s, i, drawSources)) :
+      [el("p", { class: "empty", text: "No sources yet. Add one for each place you checked, including ones you couldn't open." })]));
+  };
+  drawSources();
+
+  const qList = el("ul", { class: "qs" });
+  const drawQs = () => {
+    qList.replaceChildren(...t.questions.map((q, i) => {
+      const inp = el("input", { "aria-label": "Open question " + (i + 1), value: q, oninput: (e) => { t.questions[i] = e.target.value; markDirty(); } });
+      return el("li", {}, inp, el("button", { class: "btn quiet small", "aria-label": "Remove question " + (i + 1), text: "Remove",
+        onclick: () => { t.questions.splice(i, 1); markDirty(); drawQs(); } }));
+    }));
+  };
+  drawQs();
+
+  const title = titleField(t, "title", "Topic name");
+
+  return el("article", { class: "sheet", "aria-labelledby": "sheetTitle" },
+    el("div", { class: "sheet-head" },
+      el("button", { class: "btn quiet small back", text: "All topics", onclick: () => go("") }),
+      el("span", { class: "idtag", id: "sheetTitle", text: "Topic #" + t.id }),
+    ),
+    title,
+    el("div", { class: "meta" },
+      el("label", {}, "Whose topic", bind(t, "owner", el("select", {}, options(OWNERS, t.owner)))),
+      el("label", {}, "Status", bind(t, "status", el("select", {}, options(STATUSES, t.status)))),
+      el("label", {}, "Category", bind(t, "category", el("select", {}, options(CATEGORIES, t.category || "")))),
+    ),
+    el("p", { class: "appeared" }, appeared.length
+      ? ["In ", ...appeared.flatMap((ep, i) => [i ? ", " : "", el("a", { href: "#episode/" + ep.id, text: "episode " + pad3(ep.id) + (ep.title ? " (" + ep.title + ")" : "") }), " ", nameOf(EP_STATUSES, ep.status).toLowerCase()])]
+      : "Not in any episode yet."),
+
+    el("section", { class: "verdict", "aria-label": "Claim and truth" },
+      el("div", { class: "belief" },
+        el("h3", {}, el("label", { for: "f-popular" }, el("s", { text: "What people believe" }))),
+        bind(t, "popular", el("textarea", { id: "f-popular", placeholder: "The version everyone repeats." })),
+      ),
+      el("div", { class: "truth" },
+        el("h3", {}, el("label", { for: "f-actual", text: "What's actually true" })),
+        bind(t, "actual", el("textarea", { id: "f-actual", rows: "3", placeholder: "The real story. Mark anything you haven't confirmed yet." })),
+      ),
+    ),
+
+    el("section", { class: "block" },
+      el("h3", {}, el("label", { for: "f-hook", text: "Why it works for the show" })),
+      bind(t, "hook", el("textarea", { class: "field", id: "f-hook", rows: "2", placeholder: "The hook, the surprise, the reaction you expect." })),
+    ),
+
+    el("section", { class: "block" },
+      el("h3", {}, "Sources", el("span", { class: "aside", text: t.sources.length ? t.sources.length + " listed" : "" })),
+      sourcesBox,
+      el("div", { style: "margin-top:10px" }, el("button", { class: "btn small", text: "Add source", onclick: () => {
+        t.sources.push({ title: "", url: "", confirmed: "", access: "opened", kind: "secondary" });
+        markDirty(); drawSources();
+        const all = sourcesBox.querySelectorAll(".stitle"); all[all.length - 1].focus();
+      } })),
+    ),
+
+    el("section", { class: "block" },
+      el("h3", {}, "Open questions"),
+      qList,
+      el("div", { style: "margin-top:8px" }, el("button", { class: "btn small", text: "Add question", onclick: () => {
+        t.questions.push(""); markDirty(); drawQs();
+        const all = qList.querySelectorAll("input"); all[all.length - 1].focus();
+      } })),
+    ),
+
+    el("section", { class: "block twocol" },
+      el("label", { class: "lbl" }, "The original idea", bind(t, "idea", el("textarea", { class: "field", rows: "2" }))),
+      el("label", { class: "lbl" }, "Where it came from", bind(t, "link", el("input", { class: "field", type: "url", inputmode: "url", placeholder: "https://" }))),
+    ),
+
+    saveBar(() => saveTopic(t)),
+  );
+}
+
+/* A title that wraps instead of cutting off; Enter doesn't add a line break. */
+function titleField(obj, key, label, placeholder) {
+  const ta = el("textarea", { class: "titlefield", rows: "1", "aria-label": label, maxlength: "140", placeholder });
+  ta.addEventListener("keydown", (e) => { if (e.key === "Enter") e.preventDefault(); });
+  ta.addEventListener("input", () => { if (/\n/.test(ta.value)) ta.value = ta.value.replace(/\s*\n\s*/g, " "); });
+  return bind(obj, key, ta);
+}
+
+function sourceRow(t, s, i, redraw) {
+  const accSel = bind(s, "access", el("select", { "aria-label": "Access" }, options(ACCESS, s.access)));
+  const paint = () => accSel.classList.toggle("acc-not-opened", accSel.value === "not-opened");
+  accSel.addEventListener("change", paint); paint();
+  const url = safeUrl(s.url);
+  return el("div", { class: "source" },
+    el("div", { class: "top" },
+      bind(s, "title", el("input", { class: "stitle", "aria-label": "Source title", placeholder: "Title of the source" })),
+      url ? el("a", { class: "open-link", href: url, target: "_blank", rel: "noopener noreferrer", text: "Open" }) : el("span"),
+    ),
+    bind(s, "url", el("input", { class: "surl", type: "url", inputmode: "url", "aria-label": "Source link", placeholder: "Link, or leave blank if none was found" })),
+    bind(s, "confirmed", el("textarea", { "aria-label": "What it confirmed", rows: "2", placeholder: "What does this source actually confirm?" })),
+    el("div", { class: "tags" },
+      accSel,
+      bind(s, "kind", el("select", { "aria-label": "Source type" }, options(KINDS, s.kind))),
+      el("button", { class: "btn quiet small", text: "Remove", style: "margin-left:auto", onclick: () => {
+        if (!confirm("Remove this source from the topic? It's gone once you save.")) return;
+        t.sources.splice(i, 1); markDirty(); redraw();
+      } }),
+    ),
+  );
+}
+
+function saveBar(onSave) {
+  const btn = el("button", { class: "btn primary", id: "saveBtn", text: "Save", onclick: onSave });
+  return el("div", { class: "savebar" },
+    el("span", { class: "savestate", id: "savestate", "aria-live": "polite", text: "Saved" }),
+    btn,
+  );
+}
+document.addEventListener("keydown", (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
+    const b = document.getElementById("saveBtn");
+    if (b) { e.preventDefault(); b.click(); }
+  }
+});
+
+async function saveRecord(kind, rec, label) {
+  if (S.saving) return;
+  const map = kind === "topics" ? S.topics : S.episodes;
+  const cur = map.get(rec.id);
+  const btn = document.getElementById("saveBtn");
+  S.saving = true; if (btn) { btn.disabled = true; btn.textContent = "Saving…"; }
+  try {
+    const clean = kind === "topics" ? cleanTopic(rec) : cleanEpisode(rec);
+    if (kind === "topics") clean.updated = today();
+    const sha = await putRecord(kind, clean, cur && cur.sha, `${label}: ${kind === "topics" ? "#" + clean.id + " " + clean.title : "episode " + pad3(clean.id)}`);
+    map.set(clean.id, { data: clean, sha });
+    S.dirty = false;
+    toast("Saved");
+    const s = document.getElementById("savestate");
+    if (s) { s.textContent = "Saved"; s.classList.remove("dirty"); }
+    renderListOnly();
+  } catch (err) {
+    if (err.status === 409 || err.status === 422) return conflict(kind, rec.id);
+    toast(errText(err), true);
+  } finally {
+    S.saving = false;
+    if (btn && btn.isConnected) { btn.disabled = false; btn.textContent = "Save"; }
+  }
+}
+const saveTopic = (t) => saveRecord("topics", t, "Update topic");
+
+async function conflict(kind, id) {
+  S.saving = false;
+  const keep = confirm("Someone else saved this since you opened it.\n\nOK: load their version (your unsaved changes here will be lost).\nCancel: keep editing; copy anything you need first.");
+  if (!keep) return;
+  try {
+    const fresh = await fetchRecord(kind, id);
+    (kind === "topics" ? S.topics : S.episodes).set(id, fresh);
+    S.dirty = false; render(); toast("Loaded the latest version");
+  } catch (err) { toast(errText(err), true); }
+}
+
+function cleanTopic(t) {
+  return {
+    id: t.id, title: (t.title || "").trim() || "Untitled topic", owner: t.owner || "unassigned",
+    status: t.status || "idea", category: t.category || "", idea: t.idea || "", link: (t.link || "").trim(),
+    popular: t.popular || "", actual: t.actual || "", hook: t.hook || "",
+    sources: (t.sources || []).filter((s) => (s.title || s.url || s.confirmed || "").trim()).map((s) => ({
+      title: (s.title || "").trim(), url: (s.url || "").trim(), confirmed: s.confirmed || "",
+      access: s.access || "opened", kind: s.kind || "secondary",
+    })),
+    questions: (t.questions || []).map((q) => q.trim()).filter(Boolean),
+    created: t.created || today(), updated: t.updated || today(),
+  };
+}
+
+/* ---------- quick add ---------- */
+function openAdd() {
+  const dlg = document.getElementById("addDlg");
+  const form = document.getElementById("addForm");
+  form.reset();
+  const sel = form.elements.owner;
+  sel.replaceChildren(...options(OWNERS, guessOwner()));
+  dlg.showModal();
+  form.elements.title.focus();
+}
+function guessOwner() {
+  const login = (S.user && (S.user.name || S.user.login) || "").toLowerCase();
+  if (login.includes("keaven")) return "keaven";
+  if (login.includes("janice")) return "janice";
+  return "unassigned";
+}
+document.getElementById("addForm").addEventListener("submit", async (e) => {
+  if (e.submitter && e.submitter.value === "cancel") return;
+  e.preventDefault();
+  const f = e.target, btn = document.getElementById("addSubmit");
+  const base = cleanTopic({
+    title: f.elements.title.value, idea: f.elements.idea.value, owner: f.elements.owner.value,
+    link: f.elements.link.value, status: "idea", created: today(), updated: today(),
+  });
+  btn.disabled = true; btn.textContent = "Adding…";
+  try {
+    let id = Math.max(0, ...S.topics.keys()) + 1;
+    for (let attempt = 0; attempt < 5; attempt++, id++) {
+      try {
+        const rec = { ...base, id };
+        const sha = await putRecord("topics", rec, null, `Add topic #${id}: ${rec.title}`);
+        S.topics.set(id, { data: rec, sha });
+        document.getElementById("addDlg").close();
+        toast("Added topic #" + id);
+        go("topic/" + id);
+        return;
+      } catch (err) {
+        if (err.status !== 422 && err.status !== 409) throw err;   // that number was just taken; try the next
+      }
+    }
+    throw new Error("Couldn't find a free topic number. Reload and try again.");
+  } catch (err) { toast(err instanceof GHError ? errText(err) : err.message, true); }
+  finally { btn.disabled = false; btn.textContent = "Add topic"; }
+});
+
+/* ---------- episodes ---------- */
+function renderEpisodes() {
+  const rec = S.epSelected != null ? S.episodes.get(S.epSelected) : null;
+  if (S.epSelected != null && !rec) S.epSelected = null;
+  const eps = [...S.episodes.values()].map((x) => x.data).sort((a, b) => b.id - a.id);
+  const list = el("div", { class: "listcol", id: "listcol" },
+    el("div", { class: "toolbar" }, el("span", { class: "count", style: "margin:0;flex:1", text: eps.length === 1 ? "1 episode" : eps.length + " episodes" }),
+      el("button", { class: "btn primary", text: "New episode", onclick: newEpisode })),
+    eps.length ? el("ul", { class: "rows", role: "listbox", "aria-label": "Episodes" }, eps.map((ep) => el("li", {
+      class: "row", role: "option", tabindex: "0", "aria-selected": S.epSelected === ep.id ? "true" : "false",
+      onclick: () => go("episode/" + ep.id),
+      onkeydown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go("episode/" + ep.id); } },
+    },
+      el("span", { class: "num", text: pad3(ep.id) }),
+      el("span", { class: "ttl", text: ep.title || "Untitled episode" }),
+      el("span", { class: "status", style: `--st: var(--st-${ep.status === "planned" ? "researching" : ep.status === "recorded" ? "verified" : "aired"})`, text: nameOf(EP_STATUSES, ep.status) }),
+      el("span", { class: "sub", text: (ep.slots || []).map((s) => (s.topic != null && topicTitle(s.topic)) || "Topic not set").join(" + ") }),
+    ))) : el("div", { class: "empty", text: "No episodes yet. Start one and pair two topics." }),
+  );
+  const wrap = el("div", { class: "split" + (rec ? " has-detail" : "") }, list);
+  if (rec) { S.draft = structuredClone(rec.data); S.draftKind = "episodes"; S.dirty = false; wrap.append(episodeSheet(S.draft)); }
+  app.replaceChildren(wrap);
+}
+
+async function newEpisode() {
+  if (S.dirty && !confirm("You have unsaved changes. Leave without saving?")) return;
+  let id = S.episodes.size ? Math.max(...S.episodes.keys()) + 1 : 1;
+  const base = { title: "", status: "planned", recorded: "", published: "", host: "",
+    slots: [{ presenter: "keaven", topic: null }, { presenter: "janice", topic: null }], outline: "", notes: "", landed: "", change: "" };
+  for (let attempt = 0; attempt < 5; attempt++, id++) {
+    try {
+      const rec = { id, ...base };
+      const sha = await putRecord("episodes", rec, null, `Add episode ${pad3(id)}`);
+      S.episodes.set(id, { data: rec, sha });
+      S.dirty = false; toast("Started episode " + pad3(id)); go("episode/" + id); return;
+    } catch (err) {
+      if (err.status !== 422 && err.status !== 409) { toast(errText(err), true); return; }
+    }
+  }
+  toast("Couldn't find a free episode number. Reload and try again.", true);
+}
+
+function topicPicker(slot, i) {
+  const wrap = el("div", { class: "topicpick" });
+  const input = el("input", { role: "combobox", "aria-expanded": "false", "aria-autocomplete": "list", "aria-controls": "pick" + i,
+    "aria-label": "Topic for slot " + (i + 1), placeholder: "Search topics by name or #", autocomplete: "off",
+    value: slot.topic != null ? `#${slot.topic} ${topicTitle(slot.topic) || "(topic missing)"}` : "" });
+  const listEl = el("ul", { class: "picklist", id: "pick" + i, role: "listbox", hidden: true });
+  let active = 0, matches = [];
+  const choose = (t) => {
+    slot.topic = t ? t.id : null; markDirty();
+    input.value = t ? `#${t.id} ${t.title}` : "";
+    close();
+  };
+  const close = () => { listEl.hidden = true; input.setAttribute("aria-expanded", "false"); };
+  const draw = () => {
+    const q = input.value.trim().toLowerCase().replace(/^#(\d+)\s.*$/, "#$1");
+    matches = [...S.topics.values()].map((x) => x.data)
+      .filter((t) => !q || ("#" + t.id + " " + t.title).toLowerCase().includes(q))
+      .sort((a, b) => (a.status === "verified" ? -1 : 0) - (b.status === "verified" ? -1 : 0) || b.id - a.id).slice(0, 30);
+    active = Math.min(active, Math.max(0, matches.length - 1));
+    listEl.replaceChildren(...matches.map((t, n) => el("li", { role: "option", "aria-selected": n === active ? "true" : "false",
+      onmousedown: (e) => { e.preventDefault(); choose(t); } }, "#" + t.id + " " + t.title, el("span", { class: "sub", style: "color:var(--slate);font-size:14px", text: " " + nameOf(STATUSES, t.status) }))));
+    if (!matches.length) listEl.replaceChildren(el("li", { "aria-disabled": "true", text: "No topics match" }));
+    listEl.hidden = false; input.setAttribute("aria-expanded", "true");
+  };
+  input.addEventListener("focus", () => { input.select(); draw(); });
+  input.addEventListener("input", () => { active = 0; draw(); });
+  input.addEventListener("blur", () => setTimeout(() => {
+    close();
+    if (!input.value.trim()) { if (slot.topic != null) choose(null); }
+    else input.value = slot.topic != null ? `#${slot.topic} ${topicTitle(slot.topic) || ""}` : "";
+  }, 120));
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowDown") { e.preventDefault(); active = Math.min(active + 1, matches.length - 1); draw(); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); active = Math.max(active - 1, 0); draw(); }
+    else if (e.key === "Enter" && !listEl.hidden && matches[active]) { e.preventDefault(); choose(matches[active]); }
+    else if (e.key === "Escape") close();
+  });
+  wrap.append(input, listEl);
+  return wrap;
+}
+
+function episodeSheet(ep) {
+  ep.slots = ep.slots || [];
+  const slotsBox = el("div", { style: "display:grid;gap:8px" });
+  const drawSlots = () => slotsBox.replaceChildren(...ep.slots.map((slot, i) => el("div", { class: "slot" },
+    bind(slot, "presenter", el("select", { "aria-label": "Presenter for slot " + (i + 1) }, options(OWNERS, slot.presenter))),
+    topicPicker(slot, i),
+    el("button", { class: "btn quiet small", text: "Remove", "aria-label": "Remove slot " + (i + 1), onclick: () => { ep.slots.splice(i, 1); markDirty(); drawSlots(); } }),
+  )));
+  drawSlots();
+  return el("article", { class: "sheet", "aria-labelledby": "epTitle" },
+    el("div", { class: "sheet-head" },
+      el("button", { class: "btn quiet small back", text: "All episodes", onclick: () => go("episodes") }),
+      el("span", { class: "idtag", id: "epTitle", text: "Episode " + pad3(ep.id) }),
+    ),
+    titleField(ep, "title", "Episode title", "Episode title"),
+    el("div", { class: "meta" },
+      el("label", {}, "Status", bind(ep, "status", el("select", {}, options(EP_STATUSES, ep.status)))),
+      el("label", {}, "Weekly host", bind(ep, "host", el("select", {}, options([["", "Not set"], ...OWNERS.slice(0, 2)], ep.host || "")))),
+      el("label", {}, "Recorded", bind(ep, "recorded", el("input", { type: "date" }))),
+      el("label", {}, "Published", bind(ep, "published", el("input", { type: "date" }))),
+    ),
+    el("section", { class: "block" },
+      el("h3", {}, "Topics", el("span", { class: "aside", text: "Picked by number; names always come from the topic itself" })),
+      slotsBox,
+      el("div", { style: "margin-top:8px" }, el("button", { class: "btn small", text: "Add a slot", onclick: () => { ep.slots.push({ presenter: "unassigned", topic: null }); markDirty(); drawSlots(); } })),
+    ),
+    el("section", { class: "block" },
+      el("h3", {}, el("label", { for: "e-outline", text: "Outline" })),
+      bind(ep, "outline", el("textarea", { class: "field", id: "e-outline", rows: "5", placeholder: "Cold open, story 1, story 2, close." })),
+    ),
+    el("section", { class: "block" },
+      el("h3", {}, el("label", { for: "e-notes", text: "Show notes and other notes" })),
+      bind(ep, "notes", el("textarea", { class: "field", id: "e-notes", rows: "4" })),
+    ),
+    el("section", { class: "block twocol" },
+      el("label", { class: "lbl" }, "After recording: what landed", bind(ep, "landed", el("textarea", { class: "field", rows: "3" }))),
+      el("label", { class: "lbl" }, "What to change next time", bind(ep, "change", el("textarea", { class: "field", rows: "3" }))),
+    ),
+    saveBar(() => saveRecord("episodes", ep, "Update")),
+  );
+}
+function cleanEpisode(ep) {
+  return {
+    id: ep.id, title: (ep.title || "").trim(), status: ep.status || "planned",
+    recorded: ep.recorded || "", published: ep.published || "", host: ep.host || "",
+    slots: (ep.slots || []).map((s) => ({ presenter: s.presenter || "unassigned", topic: Number.isInteger(s.topic) ? s.topic : null })),
+    outline: ep.outline || "", notes: ep.notes || "", landed: ep.landed || "", change: ep.change || "",
+  };
+}
+
+/* ===================== chrome ===================== */
+for (const b of document.querySelectorAll(".tab")) {
+  b.addEventListener("click", () => go(b.dataset.view === "episodes" ? "episodes" : ""));
+}
+function applyTheme(v) {
+  if (v) document.documentElement.setAttribute("data-theme", v); else document.documentElement.removeAttribute("data-theme");
+}
+const themeSel = document.getElementById("themeSel");
+themeSel.addEventListener("change", () => { applyTheme(themeSel.value); try { localStorage.setItem("jks.theme", themeSel.value); } catch {} });
+document.getElementById("menuBtn").addEventListener("click", () => {
+  document.getElementById("whoami").textContent = S.user ? `Signed in as ${S.user.login}, working in ${REPO}.` : "";
+  themeSel.value = store.get("jks.theme") || "";
+  document.getElementById("settingsDlg").showModal();
+});
+document.getElementById("setClose").addEventListener("click", () => document.getElementById("settingsDlg").close());
+document.getElementById("signOut").addEventListener("click", () => {
+  if (S.dirty && !confirm("You have unsaved changes. Sign out anyway?")) return;
+  store.del("jks.token"); S.token = ""; S.user = null; S.dirty = false;
+  S.topics = new Map(); S.episodes = new Map();
+  document.getElementById("settingsDlg").close();
+  history.replaceState(null, "", location.pathname + location.search);
+  render();
+});
+
+/* ===================== boot ===================== */
+(async function boot() {
+  applyTheme(store.get("jks.theme") || "");
+  readHash();
+  const saved = store.get("jks.token");
+  if (!saved) return render();
+  app.replaceChildren(el("p", { class: "empty", text: "Loading topics…" }));
+  try { await signIn(saved, !!(() => { try { return localStorage.getItem("jks.token"); } catch { return null; } })()); }
+  catch (err) { store.del("jks.token"); renderSignIn(errText(err)); }
+})();
+</script>
+</body>
+</html>

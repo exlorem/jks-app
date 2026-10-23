@@ -256,6 +256,8 @@ select option { background: var(--paper); color: var(--ink); }
 .scard .host .titlefail { color: var(--warn); font-weight: 700; }
 .scard .conf { margin: 2px 0 0; white-space: pre-wrap; }
 .scard .conf.none { color: var(--slate); font-style: italic; }
+.scard .conf.fail { color: var(--warn); font-weight: 700; font-style: normal; }
+.pill.auto { border-style: dashed; color: var(--amber); }
 .pill.cited { background: var(--cobalt); border-color: var(--cobalt); color: var(--cobalt-ink); }
 .archives { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline; margin: 2px 0 0; font-size: 14px; }
 .archives .lbl-a { color: var(--slate); }
@@ -874,6 +876,8 @@ function waybackState(s) {
   if ((s.wayback_status || "").startsWith("failed")) return "failed";
   return "pending";
 }
+/* "What it confirmed" counts as empty when it's blank or only says TBD (same rule as the background job). */
+const isPlaceholder = (t) => /^\s*(tbd|to be determined)?[\s.!?:]*$/i.test(t || "");
 function needsArchive(s) { return !!s.cited && !!safeUrl(s.url) && !s.wayback && !s.archive_today; }
 
 function sourceCard(s, i, onEdit) {
@@ -897,6 +901,7 @@ function sourceCard(s, i, onEdit) {
     el("div", { class: "cardtop" },
       el("div", { class: "pills" },
         s.cited ? el("span", { class: "pill cited", text: "Cited on air" }) : null,
+        s.confirmed_auto ? el("span", { class: "pill auto", text: "Auto-drafted", title: "Written automatically from the page. Edit it to confirm or correct it." }) : null,
         el("span", { class: "pill acc", text: nameOf(ACCESS, s.access) }),
         el("span", { class: "pill" + (s.kind === "weak" ? " kind-weak" : ""), text: nameOf(KINDS, s.kind) }),
       ),
@@ -906,7 +911,12 @@ function sourceCard(s, i, onEdit) {
     el("p", { class: "host" }, url ? host : "No link found",
       titlePending ? ". Title is filled in from the page after saving." : null,
       titleFailed ? el("span", { class: "titlefail", text: ". Couldn't fetch the title: " + s.title_status.replace(/^failed:\s*/, "") + ". Edit to type one in." }) : null),
-    el("p", { class: "conf" + (s.confirmed ? "" : " none"), text: s.confirmed || "Nothing noted yet about what this confirms." }),
+    (() => {
+      if (!isPlaceholder(s.confirmed)) return el("p", { class: "conf", text: s.confirmed });
+      if (url && (s.summary_status || "").startsWith("failed"))
+        return el("p", { class: "conf fail", text: "Couldn't draft a summary: " + s.summary_status.replace(/^failed:\s*/, "") + ". Edit to write one." });
+      return el("p", { class: "conf none", text: url ? "A summary is drafted from the page after saving." : "Nothing noted yet about what this confirms." });
+    })(),
     archives,
   );
 }
@@ -966,14 +976,19 @@ function sourceRow(t, s, i, redraw, onDone) {
     (() => {
       const u = bind(s, "url", el("input", { class: "surl", type: "url", inputmode: "url", "aria-label": "Source link", placeholder: "Link, or leave blank if none was found" }));
       // A Wayback copy belongs to one exact link; changing the link means it has to be made again.
-      u.addEventListener("change", () => { delete s.title_status; if (s.wayback || s.wayback_status) { s.wayback = ""; s.wayback_status = ""; } });
+      u.addEventListener("change", () => { delete s.title_status; delete s.summary_status; if (s.wayback || s.wayback_status) { s.wayback = ""; s.wayback_status = ""; } });
       return u;
     })(),
     el("div", { class: "tags" },
       el("label", {}, "Access", accSel),
       el("label", {}, "Type", bind(s, "kind", el("select", { "aria-label": "Source type" }, options(KINDS, s.kind)))),
     ),
-    bind(s, "confirmed", el("textarea", { "aria-label": "What it confirmed", rows: "2", placeholder: "What does this source actually confirm?" })),
+    (() => {
+      const c = bind(s, "confirmed", el("textarea", { "aria-label": "What it confirmed", rows: "2", placeholder: "What does this source actually confirm? Leave blank to have it drafted from the page." }));
+      // Once a person edits it, it's no longer an unchecked draft.
+      c.addEventListener("input", () => { delete s.confirmed_auto; delete s.summary_status; });
+      return c;
+    })(),
     archiveForm(s),
     el("div", { class: "srcfoot" },
       el("button", { class: "btn quiet small", text: "Remove source", onclick: () => {
@@ -1079,6 +1094,8 @@ function cleanSource(s) {
   if (s.wayback_status && !out.wayback) out.wayback_status = s.wayback_status;
   if (s.wayback_attempts && !out.wayback) out.wayback_attempts = s.wayback_attempts;
   if (s.title_status && !out.title) out.title_status = s.title_status;
+  if (s.confirmed_auto && !isPlaceholder(out.confirmed)) out.confirmed_auto = true;
+  if (s.summary_status && isPlaceholder(out.confirmed)) out.summary_status = s.summary_status;
   return out;
 }
 

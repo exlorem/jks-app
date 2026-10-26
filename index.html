@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://api.github.com; img-src 'self' data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; worker-src blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://api.github.com https://exlorem.com; img-src 'self' data:; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <title>JK, We're Serious</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231A2233'/%3E%3Ctext x='16' y='22' font-family='sans-serif' font-size='15' font-weight='800' fill='%23EEF1F4' text-anchor='middle'%3EJK%3C/text%3E%3C/svg%3E">
@@ -267,6 +267,22 @@ select option { background: var(--paper); color: var(--ink); }
 .scard.needs-archive { box-shadow: 0 0 0 1px var(--warn); }
 
 /* archive controls in the source form */
+.pdfbox { border-top: 1px dashed var(--line); padding-top: 8px; }
+.pdfbox summary { cursor: pointer; font-weight: 700; }
+.pdfbox .pdfbody { display: grid; gap: 8px; margin-top: 8px; }
+.drop {
+  display: grid; place-items: center; text-align: center; gap: 4px; padding: 18px 12px; cursor: pointer;
+  border: 2px dashed var(--line); border-radius: 10px; color: var(--slate);
+}
+.drop.over { border-color: var(--cobalt); color: var(--ink); }
+.drop strong { color: var(--ink); }
+.drop input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.pdfbox textarea.preview { border-color: var(--line) !important; min-height: 160px; font-size: 14px; }
+.pdfnote { font-size: 14px; color: var(--slate); margin: 0; }
+.pdfnote.bad { color: var(--warn); font-weight: 700; }
+.pdfrow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.btn.big { font-size: 18px; padding: 12px 20px; display: inline-block; text-decoration: none; }
+.or { color: var(--slate); margin: 18px 0 6px; }
 .archform { display: grid; gap: 8px; border-top: 1px dashed var(--line); padding-top: 8px; }
 .citedbox { display: flex; gap: 8px; align-items: center; font-weight: 700; }
 .citedbox input { width: auto; }
@@ -408,6 +424,7 @@ const REPO = params.get("repo") || "exlorem/JKS";
 const [OWNER_LOGIN, REPO_NAME] = REPO.split("/");
 const BRANCH = "main";
 const API = "https://api.github.com";
+const HELPER = params.get("helper") || "https://exlorem.com/jks-api/";   // sign-in and summaries (stores nothing)
 
 const OWNERS = [["keaven", "Keaven"], ["janice", "Janice"], ["unassigned", "Unassigned"]];
 const STATUSES = [["idea", "Idea"], ["researching", "Researching"], ["verified", "Verified"], ["dropped", "Dropped"]];
@@ -426,7 +443,7 @@ const today = () => new Date().toLocaleDateString("en-CA");
 
 /* ===================== state ===================== */
 const S = {
-  token: "", user: null,
+  token: "", user: null, auth: null,   // auth: GitHub sign-in {access, refresh, expires_at, login}; null when using a pasted token
   topics: new Map(), episodes: new Map(),   // id -> {data, sha}
   view: "topics", selected: null, epSelected: null,
   q: "", fOwner: "", fStatus: "",
@@ -445,7 +462,22 @@ const store = {
 /* ===================== GitHub API ===================== */
 class GHError extends Error { constructor(status, msg) { super(msg); this.status = status; } }
 
-async function gh(method, path, body) {
+/* GitHub sign-ins last 8 hours; renew them quietly through the helper. */
+let refreshing = null;
+function refreshAuth() {
+  if (!refreshing) refreshing = (async () => {
+    try {
+      const res = await fetch(HELPER + "?action=refresh", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ refresh: S.auth.refresh }) });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data || !data.access) throw new GHError(401, "Your sign-in has expired. Sign in again.");
+      S.auth = { ...data, login: S.auth.login }; S.token = data.access;
+      try { localStorage.setItem("jks.auth", JSON.stringify(S.auth)); } catch {}
+    } finally { refreshing = null; }
+  })();
+  return refreshing;
+}
+async function gh(method, path, body, retried) {
+  if (S.auth && Date.now() / 1000 > S.auth.expires_at - 120) await refreshAuth();
   const res = await fetch(API + path, {
     method,
     headers: {
@@ -460,6 +492,7 @@ async function gh(method, path, body) {
   const text = await res.text();
   let data = null;
   try { data = text ? JSON.parse(text) : null; } catch {}
+  if (res.status === 401 && S.auth && !retried) { await refreshAuth(); return gh(method, path, body, true); }
   if (!res.ok) throw new GHError(res.status, (data && data.message) || res.statusText);
   return data;
 }
@@ -569,6 +602,7 @@ function toast(msg, isError) {
   toastTimer = setTimeout(() => (t.hidden = true), isError ? 7000 : 2600);
 }
 function errText(err) {
+  if (err.status === 401 && /^Your sign-in/.test(err.message)) return err.message;
   if (err.status === 401) return "Your token was rejected. It may have expired; sign out and paste a new one.";
   if (err.status === 403) return "Your token can't write to this repo. It needs Contents: Read and write on " + REPO + ".";
   if (err.status === 404) return "Couldn't find " + REPO + ". Check that your token has access to it.";
@@ -609,6 +643,11 @@ function render() {
 }
 
 /* ---------- sign in ---------- */
+const AUTH_ERRORS = {
+  expired: "That sign-in took too long or was interrupted. Try again.",
+  github: "GitHub didn't complete the sign-in. Try again.",
+  not_allowed: "That GitHub account isn't set up for JKS yet. Ask Keaven to add it.",
+};
 function renderSignIn(errMsg) {
   const tok = el("input", { class: "field", type: "password", id: "tok", autocomplete: "off", spellcheck: "false", placeholder: "github_pat_…" });
   const remember = el("input", { type: "checkbox", id: "remember" });
@@ -625,11 +664,14 @@ function renderSignIn(errMsg) {
   );
   app.replaceChildren(el("section", { class: "signin" },
     el("h1", {}, el("span", { class: "jk" }, "JK,"), " we're serious."),
-    el("p", {}, "The research desk for the show. Sign in with a GitHub token that can read and write ", el("code", { text: REPO }), "."),
+    el("p", {}, "The research desk for the show."),
     errMsg ? el("div", { class: "banner", role: "alert" }, el("strong", { text: "Sign in didn't work. " }), errMsg) : null,
-    form,
+    el("a", { class: "btn primary big", href: HELPER + "?action=login", text: "Sign in with GitHub" }),
     el("details", { class: "block" },
-      el("summary", { text: "How to make a token" }),
+      el("summary", { text: "Use a token instead" }),
+      el("p", { class: "or" }, "A GitHub token that can read and write ", el("code", { text: REPO }), "."),
+      form,
+      el("p", { class: "or", text: "How to make a token:" }),
       el("ol", {},
         el("li", {}, "On GitHub, open Settings, then Developer settings, then Personal access tokens, then Fine-grained tokens."),
         el("li", {}, "Choose ", el("strong", { text: "Generate new token" }), ". Set the resource owner to ", el("code", { text: OWNER_LOGIN }), "."),
@@ -639,11 +681,22 @@ function renderSignIn(errMsg) {
       ),
     ),
   ));
-  tok.focus();
+}
+
+async function signInWithGitHub(auth) {
+  S.auth = auth; S.token = auth.access;
+  try {
+    const [user] = await Promise.all([gh("GET", "/user"), gh("GET", `/repos/${REPO}`)]);
+    S.user = user;
+    await loadAll();
+  } catch (err) { S.auth = null; S.token = ""; throw err; }
+  store.del("jks.token");
+  try { localStorage.setItem("jks.auth", JSON.stringify(S.auth)); } catch {}
+  render();
 }
 
 async function signIn(token, remember) {
-  S.token = token;
+  S.auth = null; S.token = token;
   try {
     const [user] = await Promise.all([gh("GET", "/user"), gh("GET", `/repos/${REPO}`)]);
     S.user = user;
@@ -876,6 +929,144 @@ function waybackState(s) {
   if ((s.wayback_status || "").startsWith("failed")) return "failed";
   return "pending";
 }
+/* ---------- PDF to text, in this browser; summary through the helper. Nothing is saved but the summary. ---------- */
+const PDFJS = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";
+let pdfjsReady = null;
+function loadPdfJs() {
+  if (!pdfjsReady) pdfjsReady = new Promise((ok, fail) => {
+    const sc = document.createElement("script");
+    sc.src = PDFJS + "pdf.min.js";
+    sc.onload = () => { window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS + "pdf.worker.min.js"; ok(window.pdfjsLib); };
+    sc.onerror = () => { pdfjsReady = null; fail(new Error("Couldn't load the PDF reader. Check your connection and try again.")); };
+    document.head.append(sc);
+  });
+  return pdfjsReady;
+}
+const median = (a) => { if (!a.length) return 0; const b = [...a].sort((x, y) => x - y); return b[b.length >> 1]; };
+/* Turn a PDF into plain Markdown: headings from type size, paragraphs from spacing,
+   and the browser's print headers, footers and page numbers dropped. */
+async function pdfToMarkdown(file) {
+  const pdfjs = await loadPdfJs();
+  const doc = await pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()), isEvalSupported: false }).promise;
+  const pages = [];
+  for (let n = 1; n <= Math.min(doc.numPages, 80); n++) {
+    const tc = await (await doc.getPage(n)).getTextContent();
+    const lines = [];
+    for (const it of tc.items) {
+      if (!it.str) continue;
+      const size = Math.abs(it.transform[3]) || it.height || 10, x = it.transform[4], y = it.transform[5];
+      let line = lines.find((l) => Math.abs(l.y - y) < size * 0.5);
+      if (!line) { line = { y, size: 0, parts: [] }; lines.push(line); }
+      line.parts.push({ x, w: it.width || 0, str: it.str, size });
+      line.size = Math.max(line.size, size);
+    }
+    for (const l of lines) {
+      l.parts.sort((a, b) => a.x - b.x);
+      let t = "", end = null;
+      for (const p of l.parts) {
+        if (end !== null && p.x - end > p.size * 0.15 && !t.endsWith(" ") && !p.str.startsWith(" ")) t += " ";
+        t += p.str; end = p.x + p.w;
+      }
+      l.text = t.replace(/\s+/g, " ").trim();
+    }
+    pages.push(lines.filter((l) => l.text).sort((a, b) => b.y - a.y));
+  }
+  // Lines repeated at the top or bottom of most pages are print headers and footers.
+  const key = (t) => t.toLowerCase().replace(/\d+/g, "#");
+  const edge = new Map();
+  for (const ls of pages) for (const l of [...ls.slice(0, 3), ...ls.slice(-3)]) edge.set(key(l.text), (edge.get(key(l.text)) || 0) + 1);
+  const junk = (t) => (pages.length > 1 && (edge.get(key(t)) || 0) >= Math.max(2, pages.length * 0.5))
+    || /^\d+\s*(\/|of)\s*\d+$/i.test(t) || /^(page\s*)?\d+$/i.test(t)
+    || /^https?:\/\/\S+$/i.test(t) || /^\d{1,2}\/\d{1,2}\/\d{2,4},? \d{1,2}:\d{2}\s*(am|pm)?$/i.test(t);
+  const all = pages.map((ls) => ls.filter((l) => !junk(l.text)));
+  const body = median(all.flat().flatMap((l) => Array(Math.max(1, Math.round(l.text.length / 20))).fill(l.size)));
+  const blocks = [];
+  for (const ls of all) {
+    const gaps = ls.slice(1).map((l, i) => ls[i].y - l.y).filter((g) => g > 0);
+    const normal = median(gaps) || body * 1.3;
+    let para = null;
+    ls.forEach((l, i) => {
+      const heading = l.size >= body * 1.25 && l.text.length < 140;
+      const gapBefore = i ? ls[i - 1].y - l.y : Infinity;
+      if (heading) { blocks.push({ h: l.size >= body * 1.6 ? 1 : 2, text: l.text }); para = null; return; }
+      if (!para || gapBefore > normal * 1.4) { para = { text: l.text }; blocks.push(para); return; }
+      para.text = /[A-Za-z]-$/.test(para.text) && /^[a-z]/.test(l.text) ? para.text.slice(0, -1) + l.text : para.text + " " + l.text;
+    });
+    para = null;
+  }
+  // A paragraph cut by a page break continues when it doesn't end a sentence and the next starts lowercase.
+  const merged = [];
+  for (const b of blocks) {
+    const prev = merged[merged.length - 1];
+    if (prev && !prev.h && !b.h && !/[.!?:"”)]$/.test(prev.text) && /^[a-z]/.test(b.text)) prev.text += " " + b.text;
+    else merged.push({ ...b });
+  }
+  const md = merged.map((b) => (b.h ? "#".repeat(b.h) + " " : "") + b.text).join("\n\n").trim();
+  return { markdown: md.slice(0, 80000), pages: doc.numPages };
+}
+async function summarizeText(t, s, text) {
+  const call = () => fetch(HELPER + "?action=summarize", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      token: S.token, text,
+      topic: { title: t.title || "", popular: t.popular || "", actual: t.actual || "" },
+      source: { title: s.title || "", url: s.url || "" },
+      from: "a PDF one of the hosts saved" + (s.archive_today ? " from an archive.today copy" : ""),
+    }),
+  });
+  let res = await call();
+  if (res.status === 401 && S.auth) { await refreshAuth(); res = await call(); }
+  const data = await res.json().catch(() => null);
+  if (!res.ok || !data || !data.summary) throw new Error((data && data.error) || "The summary service didn't answer. Try again.");
+  return data.summary;
+}
+function pdfBox(t, s, confirmedEl) {
+  const input = el("input", { type: "file", accept: "application/pdf,.pdf", "aria-label": "Choose a PDF" });
+  const drop = el("label", { class: "drop" }, input,
+    el("strong", { text: "Drop a PDF here, or click to choose one" }),
+    el("span", { class: "pdfnote", text: "Tip: open the article (your archive.today copy works), switch to Reader view, then Print and Save as PDF." }));
+  const note = el("p", { class: "pdfnote", "aria-live": "polite" });
+  const preview = el("textarea", { class: "preview", "aria-label": "Text from the PDF", hidden: true });
+  const go = el("button", { class: "btn primary small", type: "button", text: "Summarize into the box above", hidden: true });
+  const discard = el("button", { class: "btn quiet small", type: "button", text: "Discard", hidden: true });
+  const say = (msg, bad) => { note.className = "pdfnote" + (bad ? " bad" : ""); note.textContent = msg; };
+  const reset = () => { preview.value = ""; preview.hidden = go.hidden = discard.hidden = true; drop.hidden = false; input.value = ""; };
+  const take = async (file) => {
+    if (!file) return;
+    if (!/\.pdf$/i.test(file.name) && file.type !== "application/pdf") return say("That isn't a PDF.", true);
+    say("Reading " + file.name + "…");
+    try {
+      const { markdown, pages } = await pdfToMarkdown(file);
+      if (markdown.length < 200) return say("Couldn't find much text in that PDF. If it's a scan, it has no text to read.", true);
+      preview.value = markdown; preview.hidden = go.hidden = discard.hidden = false; drop.hidden = true;
+      autosize(preview);
+      say(`Read ${pages} page${pages === 1 ? "" : "s"}. Check the text and delete anything that isn't the article. It isn't saved anywhere.`);
+    } catch (err) { say(err.message || "Couldn't read that PDF.", true); }
+  };
+  input.addEventListener("change", () => take(input.files[0]));
+  drop.addEventListener("dragover", (e) => { e.preventDefault(); drop.classList.add("over"); });
+  drop.addEventListener("dragleave", () => drop.classList.remove("over"));
+  drop.addEventListener("drop", (e) => { e.preventDefault(); drop.classList.remove("over"); take(e.dataTransfer.files[0]); });
+  discard.addEventListener("click", () => { reset(); say(""); });
+  go.addEventListener("click", async () => {
+    const text = preview.value.trim();
+    if (text.length < 200) return say("There's not enough article text left to summarize.", true);
+    if (!isPlaceholder(s.confirmed) && !confirm("Replace what's already written in the box above?")) return;
+    go.disabled = true; go.textContent = "Summarizing…"; say("");
+    try {
+      const summary = await summarizeText(t, s, text);
+      s.confirmed = summary; s.confirmed_auto = true; delete s.summary_status;
+      confirmedEl.value = summary; if (confirmedEl._fit) confirmedEl._fit();
+      markDirty(); reset();
+      say("Drafted into the box above. Check it, then save the topic. The PDF text has been discarded.");
+    } catch (err) { say(err.message, true); }
+    finally { go.disabled = false; go.textContent = "Summarize into the box above"; }
+  });
+  return el("details", { class: "pdfbox" },
+    el("summary", { text: "Summarize from a PDF (for paywalled or blocked pages)" }),
+    el("div", { class: "pdfbody" }, drop, preview, el("div", { class: "pdfrow" }, go, discard), note));
+}
+
 /* "What it confirmed" counts as empty when it's blank or only says TBD (same rule as the background job). */
 const isPlaceholder = (t) => /^\s*(tbd|to be determined)?[\s.!?:]*$/i.test(t || "");
 function needsArchive(s) { return !!s.cited && !!safeUrl(s.url) && !s.wayback && !s.archive_today; }
@@ -987,7 +1178,7 @@ function sourceRow(t, s, i, redraw, onDone) {
       const c = bind(s, "confirmed", el("textarea", { "aria-label": "What it confirmed", rows: "2", placeholder: "What does this source actually confirm? Leave blank to have it drafted from the page." }));
       // Once a person edits it, it's no longer an unchecked draft.
       c.addEventListener("input", () => { delete s.confirmed_auto; delete s.summary_status; });
-      return c;
+      return [c, pdfBox(t, s, c)];
     })(),
     archiveForm(s),
     el("div", { class: "srcfoot" },
@@ -1367,14 +1558,14 @@ function applyTheme(v) {
 const themeSel = document.getElementById("themeSel");
 themeSel.addEventListener("change", () => { applyTheme(themeSel.value); try { localStorage.setItem("jks.theme", themeSel.value); } catch {} });
 document.getElementById("menuBtn").addEventListener("click", () => {
-  document.getElementById("whoami").textContent = S.user ? `Signed in as ${S.user.login}, working in ${REPO}.` : "";
+  document.getElementById("whoami").textContent = S.user ? `Signed in as ${S.user.login}${S.auth ? " with GitHub" : " with a token"}, working in ${REPO}.` : "";
   themeSel.value = store.get("jks.theme") || "";
   document.getElementById("settingsDlg").showModal();
 });
 document.getElementById("setClose").addEventListener("click", () => document.getElementById("settingsDlg").close());
 document.getElementById("signOut").addEventListener("click", () => {
   if (S.dirty && !confirm("You have unsaved changes. Sign out anyway?")) return;
-  store.del("jks.token"); S.token = ""; S.user = null; S.dirty = false;
+  store.del("jks.token"); store.del("jks.auth"); S.token = ""; S.auth = null; S.user = null; S.dirty = false;
   S.topics = new Map(); S.episodes = new Map();
   document.getElementById("settingsDlg").close();
   history.replaceState(null, "", location.pathname + location.search);
@@ -1384,12 +1575,28 @@ document.getElementById("signOut").addEventListener("click", () => {
 /* ===================== boot ===================== */
 (async function boot() {
   applyTheme(store.get("jks.theme") || "");
+  // Coming back from GitHub sign-in: the helper puts the result in the URL fragment, which no server ever sees.
+  const h = location.hash;
+  let fresh = null, authErr = null;
+  if (h.startsWith("#auth=")) {
+    try { fresh = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(h.slice(6).replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0)))); } catch {}
+    history.replaceState(null, "", location.pathname + location.search);
+  } else if (h.startsWith("#auth_error=")) {
+    authErr = AUTH_ERRORS[h.slice(12)] || "Try again.";
+    history.replaceState(null, "", location.pathname + location.search);
+  }
   readHash();
+  if (authErr) return renderSignIn(authErr);
+  let stored = null;
+  try { stored = JSON.parse(localStorage.getItem("jks.auth") || "null"); } catch {}
+  const auth = fresh && fresh.access ? fresh : stored;
   const saved = store.get("jks.token");
-  if (!saved) return render();
+  if (!auth && !saved) return render();
   app.replaceChildren(el("p", { class: "empty", text: "Loading topics…" }));
-  try { await signIn(saved, !!(() => { try { return localStorage.getItem("jks.token"); } catch { return null; } })()); }
-  catch (err) { store.del("jks.token"); renderSignIn(errText(err)); }
+  try {
+    if (auth) await signInWithGitHub(auth);
+    else await signIn(saved, !!(() => { try { return localStorage.getItem("jks.token"); } catch { return null; } })());
+  } catch (err) { store.del("jks.token"); store.del("jks.auth"); renderSignIn(errText(err)); }
 })();
 </script>
 </body>
